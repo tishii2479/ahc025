@@ -80,15 +80,14 @@ fn solve(input: &Input, interactor: &mut Interactor) {
 
     // ソートして順位をつける
     let mut rank = sort_groups(&groups, input, interactor);
-    eprintln!("{} / {}", interactor.query_count, input.q);
-    eprintln!("{:?}", rank);
+    eprintln!("after_sort: {} / {}", interactor.query_count, input.q);
 
     // 一番重いグループから軽いグループに移す
     while interactor.query_count < input.q {
         // TODO: ロールバックの高速化
         let copied_groups = groups.clone();
         let mut heaviest_g_idx = input.d - 1;
-        if groups[rank[heaviest_g_idx]].len() == 1 {
+        while groups[rank[heaviest_g_idx]].len() == 1 {
             heaviest_g_idx -= 1;
         }
         let move_w_idx_in_group = rnd::gen_range(0, groups[rank[heaviest_g_idx]].len());
@@ -107,8 +106,6 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         let d = groups_to_output_d(&groups, input);
         interactor.output_d(&d, true);
     }
-    eprintln!("{} / {}", interactor.query_count, input.q);
-    eprintln!("{:?}", rank);
 
     let d = groups_to_output_d(&groups, input);
     interactor.output_d(&d, false);
