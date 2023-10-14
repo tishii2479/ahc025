@@ -5,6 +5,7 @@ use proconio::*;
 
 pub struct Interactor {
     source: proconio::source::line::LineSource<std::io::BufReader<Stdin>>,
+    pub query_count: usize,
 }
 
 impl Interactor {
@@ -13,6 +14,7 @@ impl Interactor {
             source: proconio::source::line::LineSource::new(std::io::BufReader::new(
                 std::io::stdin(),
             )),
+            query_count: 0,
         }
     }
 
@@ -26,7 +28,8 @@ impl Interactor {
         Input { n, d, q }
     }
 
-    pub fn output_query(&self, left_v: &Vec<usize>, right_v: &Vec<usize>) {
+    pub fn output_query(&mut self, left_v: &Vec<usize>, right_v: &Vec<usize>) {
+        self.query_count += 1;
         print!("{} {} ", left_v.len(), right_v.len());
         for e in left_v.iter() {
             print!("{} ", e);
@@ -51,7 +54,10 @@ impl Interactor {
         }
     }
 
-    pub fn output_d(&self, d: &Vec<usize>) {
+    pub fn output_d(&self, d: &Vec<usize>, for_debug: bool) {
+        if for_debug {
+            print!("#c ");
+        }
         for e in d.iter() {
             print!("{} ", e);
         }

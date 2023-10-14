@@ -1,5 +1,3 @@
-use proconio::*;
-
 #[derive(Debug)]
 pub struct Input {
     pub n: usize,

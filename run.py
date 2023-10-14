@@ -49,17 +49,9 @@ class Result:
     score: int
     duration: float
 
-    def __init__(self, stderr: str, input_file: str, solver_version: str):
+    def __init__(self, result_json: dict, input_file: str, solver_version: str):
         self.input_file = input_file
         self.solver_version = solver_version
-
-        result_str = stderr[stderr.find("result:") + len("result:") :]
-        try:
-            result_json = json.loads(result_str)
-        except json.JSONDecodeError as e:
-            print(e)
-            print(f"failed to parse result_str: {result_str}, input_file: {input_file}")
-            exit(1)
         self.score = result_json["score"]
         self.duration = result_json["duration"]
 
@@ -73,10 +65,19 @@ class Input:
 def run_case(
     input_file: str, output_file: str, solver_version: str, solver_cmd: str
 ) -> Result:
-    cmd = f"{solver_cmd} < {input_file} > {output_file}"
-    proc = subprocess.run(cmd, shell=True, stderr=subprocess.PIPE)
-    stderr = proc.stderr.decode("utf-8")
-    result = Result(stderr, input_file, solver_version)
+    while True:
+        cmd = f"{solver_cmd} < {input_file} > {output_file}"
+        proc = subprocess.run(cmd, shell=True, stderr=subprocess.PIPE)
+        stderr = proc.stderr.decode("utf-8")
+        result_str = stderr[stderr.find("result:") + len("result:") :]
+        try:
+            result_json = json.loads(result_str)
+            break
+        except json.JSONDecodeError as e:
+            print(e)
+            print(f"failed to parse result_str: {result_str}, input_file: {input_file}")
+
+    result = Result(result_json, input_file, solver_version)
     return result
 
 
@@ -129,9 +130,9 @@ def evaluate_absolute_score(
 
     logger.info(f"Raw score mean: {score_df.score.mean()}")
     logger.info("Top 10 improvements:")
-    logger.info(score_df.sort_values(by="score", ascending=False)[:10])
-    logger.info("Top 10 aggravations:")
     logger.info(score_df.sort_values(by="score")[:10])
+    logger.info("Top 10 aggravations:")
+    logger.info(score_df.sort_values(by="score", ascending=False)[:10])
 
     if columns is not None:
         assert 1 <= len(columns) <= 2
