@@ -88,7 +88,8 @@ def run(
     database_csv: str,
     args: str = "",
 ) -> pd.DataFrame:
-    solver_cmd = f"{solver_path} {args}"
+    tester_path = "./tools/target/release/tester"
+    solver_cmd = f"{tester_path} {solver_path} {args}"
 
     cases = [
         (f"{data_dir}/in/{seed:04}.txt", f"{data_dir}/out/{seed:04}.txt")

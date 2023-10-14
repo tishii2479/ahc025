@@ -7,7 +7,8 @@ if __name__ == "__main__":
 
     subprocess.run("cargo build --features local --release", shell=True)
     subprocess.run(
-        "./target/release/ahc025" + f"< tools/in/{file}.txt > tools/out/{file}.txt",
+        "./tools/target/release/tester ./target/release/ahc025"
+        + f"< tools/in/{file}.txt > tools/out/{file}.txt",
         shell=True,
     )
     subprocess.run(
