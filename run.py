@@ -213,11 +213,14 @@ if __name__ == "__main__":
     if args.list_solver:
         list_solvers(args.database_csv)
     elif args.eval:
-        evaluate_relative_score(
-            args.solver_version,
-            args.benchmark_solver_version,
-            args.database_csv,
-        )
+        if args.benchmark_solver_version is None:
+            evaluate_absolute_score(args.solver_version, args.database_csv)
+        else:
+            evaluate_relative_score(
+                args.solver_version,
+                args.benchmark_solver_version,
+                args.database_csv,
+            )
     else:
         subprocess.run("cargo build --features local --release", shell=True)
         subprocess.run(
@@ -230,8 +233,11 @@ if __name__ == "__main__":
             args.case_num,
             args.database_csv,
         )
-        evaluate_relative_score(
-            args.solver_version,
-            args.benchmark_solver_version,
-            args.database_csv,
-        )
+        if args.benchmark_solver_version is None:
+            evaluate_absolute_score(args.solver_version, args.database_csv)
+        else:
+            evaluate_relative_score(
+                args.solver_version,
+                args.benchmark_solver_version,
+                args.database_csv,
+            )

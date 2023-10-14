@@ -33,15 +33,11 @@ fn sort_groups(groups: &Vec<Vec<usize>>, input: &Input, interactor: &mut Interac
             if g_idx == pivot_g_idx {
                 continue;
             }
-            if interactor.query_count >= input.q {
-                break;
-            }
-
-            interactor.output_query(&groups[pivot_g_idx], &groups[g_idx]);
-            match interactor.read_result() {
+            match interactor.output_query(&groups[pivot_g_idx], &groups[g_idx]) {
                 BalanceResult::Left => right_targets.push(g_idx), // <
                 BalanceResult::Right => left_targets.push(g_idx), // >
                 BalanceResult::Equal => right_targets.push(g_idx), // =
+                BalanceResult::Unknown => break,
             }
         }
         [
@@ -68,14 +64,11 @@ fn update_rank(
         (0..heaviest_g_idx).collect::<Vec<usize>>()
     };
     for i in order {
-        if interactor.query_count >= input.q {
-            return false;
-        }
-        interactor.output_query(&groups[rank[i]], &groups[rank[i + 1]]);
-        match interactor.read_result() {
+        match interactor.output_query(&groups[rank[i]], &groups[rank[i + 1]]) {
             BalanceResult::Left => break,                // <
             BalanceResult::Right => rank.swap(i, i + 1), // >
             BalanceResult::Equal => break,               // =
+            BalanceResult::Unknown => return false,
         }
     }
     true
@@ -100,7 +93,7 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         while groups[rank[heaviest_g_idx]].len() == 1 {
             heaviest_g_idx -= 1;
         }
-        if rnd::nextf() < 0.5 {
+        if true {
             let move_w_idx_in_group = rnd::gen_range(0, groups[rank[heaviest_g_idx]].len());
             let move_w_idx = groups[rank[heaviest_g_idx]][move_w_idx_in_group];
 
@@ -120,24 +113,14 @@ fn solve(input: &Input, interactor: &mut Interactor) {
             let item_idx_in_group_b = rnd::gen_range(0, groups[g_b].len());
             let item_idx_a = groups[g_a][item_idx_in_group_a];
             let item_idx_b = groups[g_b][item_idx_in_group_b];
-            if !interactor.output_query(&vec![item_idx_a], &vec![item_idx_b]) {
-                continue;
-            }
-            match interactor.read_result() {
+            match interactor.output_query(&vec![item_idx_a], &vec![item_idx_b]) {
                 BalanceResult::Left => {
                     groups[g_a].swap_remove(item_idx_in_group_a);
                     groups[g_b].swap_remove(item_idx_in_group_b);
                     groups[g_a].push(item_idx_b);
                     groups[g_b].push(item_idx_a);
-                    if !interactor.output_query(&groups[g_a], &groups[g_b]) {
-                        groups[g_a].pop();
-                        groups[g_b].pop();
-                        groups[g_a].push(item_idx_a);
-                        groups[g_b].push(item_idx_b);
-                        continue;
-                    }
-                    match interactor.read_result() {
-                        BalanceResult::Right => {
+                    match interactor.output_query(&groups[g_a], &groups[g_b]) {
+                        BalanceResult::Right | BalanceResult::Unknown => {
                             groups[g_a].pop();
                             groups[g_b].pop();
                             groups[g_a].push(item_idx_a);
@@ -170,13 +153,11 @@ fn solve2(input: &Input, interactor: &mut Interactor) {
         if g_a == g_b {
             continue;
         }
-        if !interactor.output_query(&groups[g_a], &groups[g_b]) {
-            break;
-        }
-        match interactor.read_result() {
+        match interactor.output_query(&groups[g_a], &groups[g_b]) {
             BalanceResult::Left => {}
             BalanceResult::Equal => continue,
             BalanceResult::Right => std::mem::swap(&mut g_a, &mut g_b),
+            BalanceResult::Unknown => continue,
         }
 
         // weight[g_a] < weight[g_b]
@@ -189,13 +170,9 @@ fn solve2(input: &Input, interactor: &mut Interactor) {
                 let item_idx = groups[g_b][item_idx_in_group];
                 groups[g_b].swap_remove(item_idx_in_group);
                 groups[g_a].push(item_idx);
-                if !interactor.output_query(&groups[g_a], &groups[g_b]) {
-                    groups[g_a].pop();
-                    groups[g_b].push(item_idx);
-                    break;
-                }
-                match interactor.read_result() {
-                    BalanceResult::Right => {
+
+                match interactor.output_query(&groups[g_a], &groups[g_b]) {
+                    BalanceResult::Right | BalanceResult::Unknown => {
                         groups[g_a].pop();
                         groups[g_b].push(item_idx);
                     }
@@ -206,24 +183,14 @@ fn solve2(input: &Input, interactor: &mut Interactor) {
                 let item_idx_in_group_b = rnd::gen_range(0, groups[g_b].len());
                 let item_idx_a = groups[g_a][item_idx_in_group_a];
                 let item_idx_b = groups[g_b][item_idx_in_group_b];
-                if !interactor.output_query(&vec![item_idx_a], &vec![item_idx_b]) {
-                    break;
-                }
-                match interactor.read_result() {
+                match interactor.output_query(&vec![item_idx_a], &vec![item_idx_b]) {
                     BalanceResult::Left => {
                         groups[g_a].swap_remove(item_idx_in_group_a);
                         groups[g_b].swap_remove(item_idx_in_group_b);
                         groups[g_a].push(item_idx_b);
                         groups[g_b].push(item_idx_a);
-                        if !interactor.output_query(&groups[g_a], &groups[g_b]) {
-                            groups[g_a].pop();
-                            groups[g_b].pop();
-                            groups[g_a].push(item_idx_a);
-                            groups[g_b].push(item_idx_b);
-                            break;
-                        }
-                        match interactor.read_result() {
-                            BalanceResult::Right => {
+                        match interactor.output_query(&groups[g_a], &groups[g_b]) {
+                            BalanceResult::Right | BalanceResult::Unknown => {
                                 groups[g_a].pop();
                                 groups[g_b].pop();
                                 groups[g_a].push(item_idx_a);

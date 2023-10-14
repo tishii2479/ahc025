@@ -11,8 +11,4 @@ if __name__ == "__main__":
         + f"< tools/in/{file}.txt > tools/out/{file}.txt",
         shell=True,
     )
-    subprocess.run(
-        "./tools/target/release/vis" + f" tools/in/{file}.txt tools/out/{file}.txt",
-        shell=True,
-    )
     subprocess.run(f"pbcopy < tools/out/{file}.txt", shell=True)

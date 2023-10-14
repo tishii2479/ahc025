@@ -6,6 +6,7 @@ use proconio::*;
 pub struct Interactor {
     source: proconio::source::line::LineSource<std::io::BufReader<Stdin>>,
     pub query_count: usize,
+    max_query_count: usize,
 }
 
 impl Interactor {
@@ -15,6 +16,7 @@ impl Interactor {
                 std::io::stdin(),
             )),
             query_count: 0,
+            max_query_count: 1,
         }
     }
 
@@ -25,10 +27,15 @@ impl Interactor {
             d: usize,
             q: usize
         }
+        self.max_query_count = q;
         Input { n, d, q }
     }
 
-    pub fn output_query(&mut self, left_v: &Vec<usize>, right_v: &Vec<usize>) {
+    pub fn output_query(&mut self, left_v: &Vec<usize>, right_v: &Vec<usize>) -> BalanceResult {
+        if self.query_count >= self.max_query_count {
+            // eprintln!("exceed query_count limit");
+            return BalanceResult::Unknown;
+        }
         self.query_count += 1;
         print!("{} {} ", left_v.len(), right_v.len());
         for e in left_v.iter() {
@@ -39,9 +46,6 @@ impl Interactor {
         }
         println!();
         self.flush();
-    }
-
-    pub fn read_result(&mut self) -> BalanceResult {
         input! {
             from &mut self.source,
             s: String

@@ -9,4 +9,5 @@ pub enum BalanceResult {
     Left,
     Right,
     Equal,
+    Unknown,
 }
