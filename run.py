@@ -58,8 +58,17 @@ class Result:
 
 @dataclass
 class Input:
+    n: int
+    d: int
+    q: int
+
     def __init__(self, in_file: str):
-        pass
+        with open(in_file, "r") as f:
+            n, d, q = map(int, f.readline().split())
+            _ = list(map(int, f.readline().split()))
+        self.n = n
+        self.d = d
+        self.q = q
 
 
 def run_case(

@@ -55,10 +55,14 @@ fn update_rank(
     groups: &Vec<Vec<usize>>,
     from_up: bool,
     heaviest_g_idx: usize,
+    input: &Input,
     interactor: &mut Interactor,
 ) -> bool {
-    // update_rank_bubble(rank, groups, from_up, heaviest_g_idx, interactor)
-    update_rank_binary_search(rank, groups, from_up, heaviest_g_idx, interactor)
+    if input.d < 10 {
+        update_rank_bubble(rank, groups, from_up, heaviest_g_idx, interactor)
+    } else {
+        update_rank_binary_search(rank, groups, from_up, heaviest_g_idx, interactor)
+    }
 }
 
 fn update_rank_bubble(
@@ -148,12 +152,12 @@ fn solve(input: &Input, interactor: &mut Interactor) {
             }
             move_adopted_count += 1;
             eprintln!("[{} / {}] adopt_move", interactor.query_count, input.q);
-            if !update_rank(&mut rank, &groups, true, heaviest_g_idx, interactor) {
+            if !update_rank(&mut rank, &groups, true, heaviest_g_idx, input, interactor) {
                 groups = copied_groups;
                 continue;
             }
             groups[rank[0]].push(move_w_idx);
-            if !update_rank(&mut rank, &groups, false, heaviest_g_idx, interactor) {
+            if !update_rank(&mut rank, &groups, false, heaviest_g_idx, input, interactor) {
                 groups = copied_groups;
                 continue;
             }
@@ -176,12 +180,20 @@ fn solve(input: &Input, interactor: &mut Interactor) {
                         swap_adopted_count += 1;
                         eprintln!("[{} / {}] adopt_swap", interactor.query_count, input.q);
                         groups[g_b].push(item_idx_a);
-                        if !update_rank(&mut rank, &groups, true, heaviest_g_idx, interactor) {
+                        if !update_rank(&mut rank, &groups, true, heaviest_g_idx, input, interactor)
+                        {
                             groups = copied_groups;
                             continue;
                         }
                         groups[g_a].push(item_idx_b);
-                        if !update_rank(&mut rank, &groups, false, heaviest_g_idx, interactor) {
+                        if !update_rank(
+                            &mut rank,
+                            &groups,
+                            false,
+                            heaviest_g_idx,
+                            input,
+                            interactor,
+                        ) {
                             groups = copied_groups;
                             continue;
                         }

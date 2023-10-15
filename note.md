@@ -141,3 +141,5 @@ if rank.len() == rank_correct.len() {
     - ギリギリを攻めるには、徐々に錘を追加していく処理が欲しい
 - 二分探索した方が良い場面がありそう
 - 比較結果を保持しておいて活用したい
+- binary_searchかlinear_searchかうまく判断したい
+
