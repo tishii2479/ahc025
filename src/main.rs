@@ -147,17 +147,37 @@ fn action_swap2(
     // 入れ替えようとしているアイテムの大小関係が集合の大小関係と一致しなければ不採用
     match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
         BalanceResult::Right => {
-            let b2 = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
-            if !item_indices_in_b.contains(&b2) {
+            for _ in 0..3 {
+                let b2 = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
+                if item_indices_in_b.contains(&b2) {
+                    continue;
+                }
                 item_indices_b.push(groups[rank[heavier_g_idx]][b2]);
                 item_indices_in_b.push(b2);
+                match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
+                    BalanceResult::Left | BalanceResult::Equal => break,
+                    _ => {
+                        item_indices_b.pop();
+                        item_indices_in_b.pop();
+                    }
+                }
             }
         }
         BalanceResult::Left => {
-            let a2 = rnd::gen_range(0, groups[rank[lighter_g_idx]].len());
-            if !item_indices_in_a.contains(&a2) {
+            for _ in 0..3 {
+                let a2 = rnd::gen_range(0, groups[rank[lighter_g_idx]].len());
+                if item_indices_in_a.contains(&a2) {
+                    continue;
+                }
                 item_indices_a.push(groups[rank[lighter_g_idx]][a2]);
                 item_indices_in_a.push(a2);
+                match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
+                    BalanceResult::Left | BalanceResult::Equal => break,
+                    _ => {
+                        item_indices_a.pop();
+                        item_indices_in_a.pop();
+                    }
+                }
             }
         }
         BalanceResult::Equal => {}
@@ -227,6 +247,7 @@ fn action_swap2(
             ) {
                 return false;
             }
+            dbg!(&item_indices_a, &item_indices_b);
             return true;
         }
     }
@@ -273,7 +294,7 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         let p = rnd::nextf();
         let action = if p < 0.5 {
             action_move
-        } else if p < 1. {
+        } else if p < 0.9 {
             action_swap
         } else {
             action_swap2
