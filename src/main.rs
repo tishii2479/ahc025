@@ -6,6 +6,56 @@ use crate::def::*;
 use crate::interactor::*;
 use crate::util::*;
 
+fn action_move(
+    heavier_g_idx: usize,
+    lighter_g_idx: usize,
+    groups: &mut Vec<Vec<usize>>,
+    rank: &mut Vec<usize>,
+    input: &Input,
+    balancer: &mut Balancer,
+    interactor: &mut Interactor,
+) -> bool {
+    let item_idx_in_group = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
+    let item_idx = groups[rank[heavier_g_idx]][item_idx_in_group];
+
+    groups[rank[heavier_g_idx]].swap_remove(item_idx_in_group);
+
+    // 集合の重さの差が悪化したら不採用
+    if balancer.get_result(
+        &groups[rank[lighter_g_idx]],
+        &groups[rank[heavier_g_idx]],
+        interactor,
+    ) == BalanceResult::Right
+    {
+        return false;
+    }
+
+    if !update_rank(
+        rank,
+        &groups,
+        true,
+        lighter_g_idx,
+        heavier_g_idx,
+        input,
+        interactor,
+    ) {
+        return false;
+    }
+    groups[rank[lighter_g_idx]].push(item_idx);
+    if !update_rank(
+        rank,
+        &groups,
+        false,
+        lighter_g_idx,
+        heavier_g_idx,
+        input,
+        interactor,
+    ) {
+        return false;
+    }
+    true
+}
+
 fn solve(input: &Input, interactor: &mut Interactor) {
     let mut balancer = Balancer::new(input);
 
@@ -42,48 +92,19 @@ fn solve(input: &Input, interactor: &mut Interactor) {
 
         trial_count += 1;
         if rnd::nextf() < 0.5 {
-            let item_idx_in_group = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
-            let item_idx = groups[rank[heavier_g_idx]][item_idx_in_group];
-
-            groups[rank[heavier_g_idx]].swap_remove(item_idx_in_group);
-
-            // 集合の重さの差が悪化したら不採用
-            if balancer.get_result(
-                &groups[rank[lighter_g_idx]],
-                &groups[rank[heavier_g_idx]],
-                interactor,
-            ) == BalanceResult::Right
-            {
-                groups[rank[heavier_g_idx]].push(item_idx);
-                continue;
-            }
-
-            move_adopted_count += 1;
-            eprintln!("[{} / {}] adopt_move", interactor.query_count, input.q);
-            if !update_rank(
-                &mut rank,
-                &groups,
-                true,
-                lighter_g_idx,
+            if action_move(
                 heavier_g_idx,
+                lighter_g_idx,
+                &mut groups,
+                &mut rank,
                 input,
+                &mut balancer,
                 interactor,
             ) {
+                move_adopted_count += 1;
+                eprintln!("[{} / {}] adopt_move", interactor.query_count, input.q);
+            } else {
                 groups = copied_groups;
-                continue;
-            }
-            groups[rank[lighter_g_idx]].push(item_idx);
-            if !update_rank(
-                &mut rank,
-                &groups,
-                false,
-                lighter_g_idx,
-                heavier_g_idx,
-                input,
-                interactor,
-            ) {
-                groups = copied_groups;
-                continue;
             }
         } else {
             let item_idx_in_group_a = rnd::gen_range(0, groups[rank[lighter_g_idx]].len());
