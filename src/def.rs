@@ -5,10 +5,10 @@ pub struct Input {
     pub q: usize,
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Debug)]
 pub enum BalanceResult {
-    Left,
-    Right,
-    Equal,
-    Unknown,
+    Left,    // <
+    Right,   // >
+    Equal,   // =
+    Unknown, // failed to get result (query limit or search failure)
 }
