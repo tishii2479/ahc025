@@ -47,6 +47,14 @@ impl Balancer {
         right_v: &Vec<usize>,
         interactor: &mut Interactor,
     ) -> BalanceResult {
+        if left_v.len() == 0 && right_v.len() > 0 {
+            return BalanceResult::Left;
+        } else if left_v.len() > 0 && right_v.len() == 0 {
+            return BalanceResult::Right;
+        } else if left_v.len() == 0 && right_v.len() == 0 {
+            return BalanceResult::Equal;
+        }
+
         let left_hash = self.to_hash(left_v);
         let right_hash = self.to_hash(right_v);
 

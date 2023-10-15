@@ -148,21 +148,17 @@ fn action_swap2(
     // 入れ替えようとしているアイテムの大小関係が集合の大小関係と一致しなければ不採用
     match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
         BalanceResult::Right => {
-            if groups[rank[heavier_g_idx]].len() > 2 {
-                let b2 = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
-                if !item_indices_in_b.contains(&b2) {
-                    item_indices_b.push(groups[rank[heavier_g_idx]][b2]);
-                    item_indices_in_b.push(b2);
-                }
+            let b2 = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
+            if !item_indices_in_b.contains(&b2) {
+                item_indices_b.push(groups[rank[heavier_g_idx]][b2]);
+                item_indices_in_b.push(b2);
             }
         }
         BalanceResult::Left => {
-            if groups[rank[lighter_g_idx]].len() > 2 {
-                let a2 = rnd::gen_range(0, groups[rank[lighter_g_idx]].len());
-                if !item_indices_in_a.contains(&a2) {
-                    item_indices_a.push(groups[rank[lighter_g_idx]][a2]);
-                    item_indices_in_a.push(a2);
-                }
+            let a2 = rnd::gen_range(0, groups[rank[lighter_g_idx]].len());
+            if !item_indices_in_a.contains(&a2) {
+                item_indices_a.push(groups[rank[lighter_g_idx]][a2]);
+                item_indices_in_a.push(a2);
             }
         }
         BalanceResult::Equal => {}
@@ -268,14 +264,18 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     let mut trial_count = 0;
     let mut move_adopted_count = 0;
     let mut swap_adopted_count = 0;
+    let mut swap2_adopted_count = 0;
 
     while interactor.query_count < input.q && time::elapsed_seconds() < TIME_LIMIT - 0.2 {
         // TODO: ロールバックの高速化
         let copied_groups = groups.clone();
         let (lighter_g_idx, heavier_g_idx) = select_g_idx_pair(&groups, &rank, input);
 
-        let action = if rnd::nextf() < 0.5 {
+        let p = rnd::nextf();
+        let action = if p < 0.5 {
             action_move
+        } else if p < 1.0 {
+            action_swap
         } else {
             action_swap2
         };
@@ -293,9 +293,12 @@ fn solve(input: &Input, interactor: &mut Interactor) {
             if action == action_move {
                 move_adopted_count += 1;
                 eprintln!("[{} / {}] adopt move", interactor.query_count, input.q);
-            } else if action == action_swap2 {
+            } else if action == action_swap {
                 swap_adopted_count += 1;
                 eprintln!("[{} / {}] adopt swap", interactor.query_count, input.q);
+            } else if action == action_swap2 {
+                swap2_adopted_count += 1;
+                eprintln!("[{} / {}] adopt swap2", interactor.query_count, input.q);
             }
         } else {
             groups = copied_groups;
@@ -313,6 +316,7 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     eprintln!("trial_count:         {trial_count}");
     eprintln!("move_adopted_count:  {move_adopted_count}");
     eprintln!("swap_adopted_count:  {swap_adopted_count}");
+    eprintln!("swap2_adopted_count: {swap2_adopted_count}");
 
     let d = groups_to_output_d(&groups, input);
     interactor.output_d(&d, false);
