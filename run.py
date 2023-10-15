@@ -142,10 +142,10 @@ def evaluate_absolute_score(
     )
 
     logger.info(f"Raw score mean: {score_df.score.mean()}")
-    logger.info("Top 25 improvements:")
-    logger.info(score_df.sort_values(by="score")[:25])
-    logger.info("Top 25 aggravations:")
-    logger.info(score_df.sort_values(by="score", ascending=False)[:25])
+    logger.info("Top 10 improvements:")
+    logger.info(score_df.sort_values(by="score")[:10])
+    logger.info("Top 10 aggravations:")
+    logger.info(score_df.sort_values(by="score", ascending=False)[:10])
     logger.info(score_df.score.describe())
 
     if columns is not None:
@@ -180,13 +180,15 @@ def evaluate_relative_score(
 
     logger.info(f"Raw score mean: {score_df.score.mean()}")
     logger.info(f"Relative score mean: {score_df['relative_score'].mean()}")
-    logger.info("Top 25 improvements:")
-    logger.info(score_df.sort_values(by="relative_score")[:25])
-    logger.info("Top 25 aggravations:")
-    logger.info(score_df.sort_values(by="relative_score", ascending=False)[:25])
+    logger.info("Top 10 improvements:")
+    logger.info(score_df.sort_values(by="relative_score")[:10])
+    logger.info("Top 10 aggravations:")
+    logger.info(score_df.sort_values(by="relative_score", ascending=False)[:10])
     logger.info(
         f"Longest duration: {score_df.sort_values(by='duration').duration.iloc[-1]}"
     )
+    logger.info(score_df.score.describe())
+    logger.info(score_df.relative_score.describe())
 
     if columns is not None:
         assert 1 <= len(columns) <= 2

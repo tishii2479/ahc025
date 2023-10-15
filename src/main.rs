@@ -120,6 +120,123 @@ fn action_swap(
     }
 }
 
+///
+/// 1. A < Bとする
+/// 2. A、Bからランダムにアイテムa_1, b_1を選択する
+/// 3. a_1 > b_1の時
+///     1. a_1 < b_1 + b_2となるようにアイテムb_2をBから選択する
+/// 4. a_1 < b_1の時
+///     1. a_1 + a_2 < b_1となるようなa_2があればAから選択する
+/// 5. 今まで通り
+///
+fn action_swap2(
+    heavier_g_idx: usize,
+    lighter_g_idx: usize,
+    groups: &mut Vec<Vec<usize>>,
+    rank: &mut Vec<usize>,
+    input: &Input,
+    balancer: &mut Balancer,
+    interactor: &mut Interactor,
+) -> bool {
+    let a1 = rnd::gen_range(0, groups[rank[lighter_g_idx]].len());
+    let b1 = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
+    let mut item_indices_a = vec![groups[rank[lighter_g_idx]][a1]];
+    let mut item_indices_b = vec![groups[rank[heavier_g_idx]][b1]];
+    let mut item_indices_in_a = vec![a1];
+    let mut item_indices_in_b = vec![b1];
+
+    // 入れ替えようとしているアイテムの大小関係が集合の大小関係と一致しなければ不採用
+    match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
+        BalanceResult::Right => {
+            if groups[rank[heavier_g_idx]].len() > 2 {
+                let b2 = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
+                if !item_indices_in_b.contains(&b2) {
+                    item_indices_b.push(groups[rank[heavier_g_idx]][b2]);
+                    item_indices_in_b.push(b2);
+                }
+            }
+        }
+        BalanceResult::Left => {
+            if groups[rank[lighter_g_idx]].len() > 2 {
+                let a2 = rnd::gen_range(0, groups[rank[lighter_g_idx]].len());
+                if !item_indices_in_a.contains(&a2) {
+                    item_indices_a.push(groups[rank[lighter_g_idx]][a2]);
+                    item_indices_in_a.push(a2);
+                }
+            }
+        }
+        BalanceResult::Equal => {}
+        BalanceResult::Unknown => return false,
+    }
+    match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
+        BalanceResult::Left | BalanceResult::Equal => {}
+        _ => return false,
+    }
+
+    for item_idx_a in item_indices_a.iter() {
+        let i = groups[rank[lighter_g_idx]]
+            .iter()
+            .position(|e| e == item_idx_a)
+            .unwrap();
+        groups[rank[lighter_g_idx]].remove(i);
+    }
+    for item_idx_b in item_indices_b.iter() {
+        let i = groups[rank[heavier_g_idx]]
+            .iter()
+            .position(|e| e == item_idx_b)
+            .unwrap();
+        groups[rank[heavier_g_idx]].remove(i);
+    }
+
+    match balancer.get_result(
+        &groups[rank[lighter_g_idx]],
+        &groups[rank[heavier_g_idx]],
+        interactor,
+    ) {
+        // 集合の重さの差が悪化したら不採用
+        BalanceResult::Right | BalanceResult::Unknown => {
+            for item_idx_a in item_indices_a.iter() {
+                groups[rank[lighter_g_idx]].push(*item_idx_a);
+            }
+            for item_idx_b in item_indices_b.iter() {
+                groups[rank[heavier_g_idx]].push(*item_idx_b);
+            }
+            return false;
+        }
+        _ => {
+            for item_idx_a in item_indices_a.iter() {
+                groups[rank[heavier_g_idx]].push(*item_idx_a);
+            }
+            if !update_rank(
+                rank,
+                &groups,
+                true,
+                lighter_g_idx,
+                heavier_g_idx,
+                input,
+                interactor,
+            ) {
+                return false;
+            }
+            for item_idx_b in item_indices_b.iter() {
+                groups[rank[lighter_g_idx]].push(*item_idx_b);
+            }
+            if !update_rank(
+                rank,
+                &groups,
+                false,
+                lighter_g_idx,
+                heavier_g_idx,
+                input,
+                interactor,
+            ) {
+                return false;
+            }
+            return true;
+        }
+    }
+}
+
 fn select_g_idx_pair(groups: &Vec<Vec<usize>>, rank: &Vec<usize>, input: &Input) -> (usize, usize) {
     let mut heavier_g_idx;
     let mut lighter_g_idx;
@@ -160,7 +277,7 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         let action = if rnd::nextf() < 0.5 {
             action_move
         } else {
-            action_swap
+            action_swap2
         };
 
         trial_count += 1;
@@ -175,10 +292,11 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         ) {
             if action == action_move {
                 move_adopted_count += 1;
-            } else if action == action_swap {
+                eprintln!("[{} / {}] adopt move", interactor.query_count, input.q);
+            } else if action == action_swap2 {
                 swap_adopted_count += 1;
+                eprintln!("[{} / {}] adopt swap", interactor.query_count, input.q);
             }
-            eprintln!("[{} / {}] adopt", interactor.query_count, input.q);
         } else {
             groups = copied_groups;
         }
