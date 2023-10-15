@@ -142,14 +142,14 @@ impl Balancer {
         right_v: &Vec<usize>,
         interactor: &mut Interactor,
     ) -> BalanceResult {
-        let search_result = self.search_result(left_v, right_v);
-        if search_result != BalanceResult::Unknown {
-            eprintln!(
-                "found cached search result {:?} for: {:?} -> {:?}",
-                search_result, left_v, right_v
-            );
-            return search_result;
-        }
+        // let search_result = self.search_result(left_v, right_v);
+        // if search_result != BalanceResult::Unknown {
+        //     eprintln!(
+        //         "found cached search result {:?} for: {:?} -> {:?}",
+        //         search_result, left_v, right_v
+        //     );
+        //     return search_result;
+        // }
         let query_result = interactor.output_query(left_v, right_v);
         let left_hash = self.to_hash(left_v);
         let right_hash = self.to_hash(right_v);
@@ -240,10 +240,16 @@ fn solve(input: &Input, interactor: &mut Interactor) {
 
         // TODO: ロールバックの高速化
         let copied_groups = groups.clone();
-        let mut heaviest_g_idx = input.d - 1;
-        // 重いグループが一個しかアイテムがなければ、グループを変更する
-        while groups[rank[heaviest_g_idx]].len() == 1 {
-            heaviest_g_idx -= 1;
+        let mut heaviest_g_idx;
+        let mut lighter_g_idx;
+        loop {
+            lighter_g_idx = rnd::gen_range(0, input.d / 2);
+            heaviest_g_idx = rnd::gen_range(input.d / 2, input.d);
+
+            // 重いグループが一個しかアイテムがなければ、グループを変更する
+            if groups[rank[heaviest_g_idx]].len() > 1 {
+                break;
+            }
         }
 
         trial_count += 1;
@@ -254,8 +260,11 @@ fn solve(input: &Input, interactor: &mut Interactor) {
             groups[rank[heaviest_g_idx]].swap_remove(item_idx_in_group);
 
             // 集合の重さの差が悪化したら不採用
-            if balancer.get_result(&groups[rank[0]], &groups[rank[heaviest_g_idx]], interactor)
-                == BalanceResult::Right
+            if balancer.get_result(
+                &groups[rank[lighter_g_idx]],
+                &groups[rank[heaviest_g_idx]],
+                interactor,
+            ) == BalanceResult::Right
             {
                 groups[rank[heaviest_g_idx]].push(item_idx);
                 continue;
@@ -267,15 +276,15 @@ fn solve(input: &Input, interactor: &mut Interactor) {
                 groups = copied_groups;
                 continue;
             }
-            groups[rank[0]].push(item_idx);
+            groups[rank[lighter_g_idx]].push(item_idx);
             if !update_rank(&mut rank, &groups, false, heaviest_g_idx, input, interactor) {
                 groups = copied_groups;
                 continue;
             }
         } else {
-            let item_idx_in_group_a = rnd::gen_range(0, groups[rank[0]].len());
+            let item_idx_in_group_a = rnd::gen_range(0, groups[rank[lighter_g_idx]].len());
             let item_idx_in_group_b = rnd::gen_range(0, groups[rank[heaviest_g_idx]].len());
-            let item_idx_a = groups[rank[0]][item_idx_in_group_a];
+            let item_idx_a = groups[rank[lighter_g_idx]][item_idx_in_group_a];
             let item_idx_b = groups[rank[heaviest_g_idx]][item_idx_in_group_b];
 
             // 入れ替えようとしているアイテムの大小関係が集合の大小関係と一致しなければ不採用
@@ -285,12 +294,16 @@ fn solve(input: &Input, interactor: &mut Interactor) {
                 continue;
             }
 
-            groups[rank[0]].swap_remove(item_idx_in_group_a);
+            groups[rank[lighter_g_idx]].swap_remove(item_idx_in_group_a);
             groups[rank[heaviest_g_idx]].swap_remove(item_idx_in_group_b);
-            match balancer.get_result(&groups[rank[0]], &groups[rank[heaviest_g_idx]], interactor) {
+            match balancer.get_result(
+                &groups[rank[lighter_g_idx]],
+                &groups[rank[heaviest_g_idx]],
+                interactor,
+            ) {
                 // 集合の重さの差が悪化したら不採用
                 BalanceResult::Right | BalanceResult::Unknown => {
-                    groups[rank[0]].push(item_idx_a);
+                    groups[rank[lighter_g_idx]].push(item_idx_a);
                     groups[rank[heaviest_g_idx]].push(item_idx_b);
                 }
                 _ => {
@@ -301,7 +314,7 @@ fn solve(input: &Input, interactor: &mut Interactor) {
                         groups = copied_groups;
                         continue;
                     }
-                    groups[rank[0]].push(item_idx_b);
+                    groups[rank[lighter_g_idx]].push(item_idx_b);
                     if !update_rank(&mut rank, &groups, false, heaviest_g_idx, input, interactor) {
                         groups = copied_groups;
                         continue;
