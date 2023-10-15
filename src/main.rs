@@ -55,7 +55,17 @@ fn update_rank(
     groups: &Vec<Vec<usize>>,
     from_up: bool,
     heaviest_g_idx: usize,
-    input: &Input,
+    interactor: &mut Interactor,
+) -> bool {
+    // update_rank_bubble(rank, groups, from_up, heaviest_g_idx, interactor)
+    update_rank_binary_search(rank, groups, from_up, heaviest_g_idx, interactor)
+}
+
+fn update_rank_bubble(
+    rank: &mut Vec<usize>,
+    groups: &Vec<Vec<usize>>,
+    from_up: bool,
+    heaviest_g_idx: usize,
     interactor: &mut Interactor,
 ) -> bool {
     let order = if from_up {
@@ -74,6 +84,33 @@ fn update_rank(
     true
 }
 
+fn update_rank_binary_search(
+    rank: &mut Vec<usize>,
+    groups: &Vec<Vec<usize>>,
+    from_up: bool,
+    heaviest_g_idx: usize,
+    interactor: &mut Interactor,
+) -> bool {
+    let move_g_idx = if from_up { heaviest_g_idx } else { 0 };
+    let move_g = rank[move_g_idx];
+    rank.remove(move_g_idx);
+    let mut l = -1 as i32;
+    let mut r = rank.len() as i32;
+    while r - l > 1 {
+        let m = (l + r) / 2;
+        match interactor.output_query(&groups[rank[m as usize]], &groups[move_g]) {
+            BalanceResult::Left | BalanceResult::Equal => l = m, // <
+            BalanceResult::Right => r = m,                       // >
+            BalanceResult::Unknown => {
+                rank.insert(move_g_idx, move_g);
+                return false;
+            }
+        }
+    }
+    rank.insert(r as usize, move_g);
+    true
+}
+
 fn solve(input: &Input, interactor: &mut Interactor) {
     // ランダムにグループに割り振る
     let mut groups = vec![vec![]; input.d];
@@ -85,6 +122,10 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     let mut rank = sort_groups(&groups, input, interactor);
     eprintln!("after_sort: {} / {}", interactor.query_count, input.q);
 
+    let mut trial_count = 0;
+    let mut move_adopted_count = 0;
+    let mut swap_adopted_count = 0;
+
     // 一番重いグループから軽いグループに移す
     while interactor.query_count < input.q {
         // TODO: ロールバックの高速化
@@ -93,6 +134,7 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         while groups[rank[heaviest_g_idx]].len() == 1 {
             heaviest_g_idx -= 1;
         }
+        trial_count += 1;
         if rnd::nextf() < 0.5 {
             let move_w_idx_in_group = rnd::gen_range(0, groups[rank[heaviest_g_idx]].len());
             let move_w_idx = groups[rank[heaviest_g_idx]][move_w_idx_in_group];
@@ -104,12 +146,14 @@ fn solve(input: &Input, interactor: &mut Interactor) {
                 groups[rank[heaviest_g_idx]].push(move_w_idx);
                 continue;
             }
-            if !update_rank(&mut rank, &groups, true, heaviest_g_idx, input, interactor) {
+            move_adopted_count += 1;
+            eprintln!("[{} / {}] adopt_move", interactor.query_count, input.q);
+            if !update_rank(&mut rank, &groups, true, heaviest_g_idx, interactor) {
                 groups = copied_groups;
                 continue;
             }
             groups[rank[0]].push(move_w_idx);
-            if !update_rank(&mut rank, &groups, false, heaviest_g_idx, input, interactor) {
+            if !update_rank(&mut rank, &groups, false, heaviest_g_idx, interactor) {
                 groups = copied_groups;
                 continue;
             }
@@ -129,22 +173,15 @@ fn solve(input: &Input, interactor: &mut Interactor) {
                         groups[g_b].push(item_idx_b);
                     }
                     _ => {
-                        eprintln!("hi");
+                        swap_adopted_count += 1;
+                        eprintln!("[{} / {}] adopt_swap", interactor.query_count, input.q);
                         groups[g_b].push(item_idx_a);
-                        if !update_rank(&mut rank, &groups, true, heaviest_g_idx, input, interactor)
-                        {
+                        if !update_rank(&mut rank, &groups, true, heaviest_g_idx, interactor) {
                             groups = copied_groups;
                             continue;
                         }
                         groups[g_a].push(item_idx_b);
-                        if !update_rank(
-                            &mut rank,
-                            &groups,
-                            false,
-                            heaviest_g_idx,
-                            input,
-                            interactor,
-                        ) {
+                        if !update_rank(&mut rank, &groups, false, heaviest_g_idx, interactor) {
                             groups = copied_groups;
                             continue;
                         }
@@ -157,76 +194,9 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         interactor.output_d(&d, true);
     }
 
-    let d = groups_to_output_d(&groups, input);
-    interactor.output_d(&d, false);
-}
-
-fn solve2(input: &Input, interactor: &mut Interactor) {
-    // ランダムにグループに割り振る
-    let mut groups = vec![vec![]; input.d];
-    for i in 0..input.n {
-        groups[i % input.d].push(i);
-    }
-
-    while interactor.query_count < input.q {
-        let (mut g_a, mut g_b) = (rnd::gen_range(0, input.d), rnd::gen_range(0, input.d));
-        if g_a == g_b {
-            continue;
-        }
-        match interactor.output_query(&groups[g_a], &groups[g_b]) {
-            BalanceResult::Left => {}
-            BalanceResult::Equal => continue,
-            BalanceResult::Right => std::mem::swap(&mut g_a, &mut g_b),
-            BalanceResult::Unknown => continue,
-        }
-
-        // weight[g_a] < weight[g_b]
-        for _ in 0..5 {
-            if rnd::nextf() < 0.5 {
-                if groups[g_b].len() == 1 {
-                    continue;
-                }
-                let item_idx_in_group = rnd::gen_range(0, groups[g_b].len());
-                let item_idx = groups[g_b][item_idx_in_group];
-                groups[g_b].swap_remove(item_idx_in_group);
-                groups[g_a].push(item_idx);
-
-                match interactor.output_query(&groups[g_a], &groups[g_b]) {
-                    BalanceResult::Right | BalanceResult::Unknown => {
-                        groups[g_a].pop();
-                        groups[g_b].push(item_idx);
-                    }
-                    _ => break,
-                }
-            } else {
-                let item_idx_in_group_a = rnd::gen_range(0, groups[g_a].len());
-                let item_idx_in_group_b = rnd::gen_range(0, groups[g_b].len());
-                let item_idx_a = groups[g_a][item_idx_in_group_a];
-                let item_idx_b = groups[g_b][item_idx_in_group_b];
-                match interactor.output_query(&vec![item_idx_a], &vec![item_idx_b]) {
-                    BalanceResult::Left => {
-                        groups[g_a].swap_remove(item_idx_in_group_a);
-                        groups[g_b].swap_remove(item_idx_in_group_b);
-                        groups[g_a].push(item_idx_b);
-                        groups[g_b].push(item_idx_a);
-                        match interactor.output_query(&groups[g_a], &groups[g_b]) {
-                            BalanceResult::Right | BalanceResult::Unknown => {
-                                groups[g_a].pop();
-                                groups[g_b].pop();
-                                groups[g_a].push(item_idx_a);
-                                groups[g_b].push(item_idx_b);
-                            }
-                            _ => break,
-                        }
-                    }
-                    _ => break,
-                }
-            }
-        }
-
-        let d = groups_to_output_d(&groups, input);
-        interactor.output_d(&d, true);
-    }
+    eprintln!("trial_count:         {trial_count}");
+    eprintln!("move_adopted_count:  {move_adopted_count}");
+    eprintln!("swap_adopted_count:  {swap_adopted_count}");
 
     let d = groups_to_output_d(&groups, input);
     interactor.output_d(&d, false);
