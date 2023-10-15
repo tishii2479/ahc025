@@ -146,6 +146,7 @@ def evaluate_absolute_score(
     logger.info(score_df.sort_values(by="score")[:25])
     logger.info("Top 25 aggravations:")
     logger.info(score_df.sort_values(by="score", ascending=False)[:25])
+    logger.info(score_df.score.describe())
 
     if columns is not None:
         assert 1 <= len(columns) <= 2

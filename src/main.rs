@@ -155,7 +155,6 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     while interactor.query_count < input.q && time::elapsed_seconds() < TIME_LIMIT - 0.2 {
         // TODO: ロールバックの高速化
         let copied_groups = groups.clone();
-
         let (lighter_g_idx, heavier_g_idx) = select_g_idx_pair(&groups, &rank, input);
 
         let action = if rnd::nextf() < 0.5 {
@@ -176,7 +175,7 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         ) {
             if action == action_move {
                 move_adopted_count += 1;
-            } else {
+            } else if action == action_swap {
                 swap_adopted_count += 1;
             }
             eprintln!("[{} / {}] adopt", interactor.query_count, input.q);
