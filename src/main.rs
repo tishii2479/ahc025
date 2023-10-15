@@ -287,12 +287,6 @@ fn solve(input: &Input, interactor: &mut Interactor) {
                 break;
             }
         }
-        // let lighter_g_idx = 0;
-        // let mut heavier_g_idx = input.d - 1;
-        // // 重いグループが一個しかアイテムがなければ、グループを変更する
-        // while groups[rank[heavier_g_idx]].len() == 1 {
-        //     heavier_g_idx -= 1;
-        // }
 
         trial_count += 1;
         if rnd::nextf() < 0.5 {
