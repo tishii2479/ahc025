@@ -93,11 +93,17 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         while groups[rank[heaviest_g_idx]].len() == 1 {
             heaviest_g_idx -= 1;
         }
-        if true {
+        if rnd::nextf() < 0.5 {
             let move_w_idx_in_group = rnd::gen_range(0, groups[rank[heaviest_g_idx]].len());
             let move_w_idx = groups[rank[heaviest_g_idx]][move_w_idx_in_group];
 
             groups[rank[heaviest_g_idx]].swap_remove(move_w_idx_in_group);
+            if interactor.output_query(&groups[rank[0]], &groups[rank[heaviest_g_idx]])
+                == BalanceResult::Right
+            {
+                groups[rank[heaviest_g_idx]].push(move_w_idx);
+                continue;
+            }
             if !update_rank(&mut rank, &groups, true, heaviest_g_idx, input, interactor) {
                 groups = copied_groups;
                 continue;
@@ -108,28 +114,42 @@ fn solve(input: &Input, interactor: &mut Interactor) {
                 continue;
             }
         } else {
-            let (g_a, g_b) = (0, heaviest_g_idx);
+            let (g_a, g_b) = (rank[0], rank[heaviest_g_idx]);
             let item_idx_in_group_a = rnd::gen_range(0, groups[g_a].len());
             let item_idx_in_group_b = rnd::gen_range(0, groups[g_b].len());
             let item_idx_a = groups[g_a][item_idx_in_group_a];
             let item_idx_b = groups[g_b][item_idx_in_group_b];
-            match interactor.output_query(&vec![item_idx_a], &vec![item_idx_b]) {
-                BalanceResult::Left => {
-                    groups[g_a].swap_remove(item_idx_in_group_a);
-                    groups[g_b].swap_remove(item_idx_in_group_b);
-                    groups[g_a].push(item_idx_b);
-                    groups[g_b].push(item_idx_a);
-                    match interactor.output_query(&groups[g_a], &groups[g_b]) {
-                        BalanceResult::Right | BalanceResult::Unknown => {
-                            groups[g_a].pop();
-                            groups[g_b].pop();
-                            groups[g_a].push(item_idx_a);
-                            groups[g_b].push(item_idx_b);
+            if interactor.output_query(&vec![item_idx_a], &vec![item_idx_b]) == BalanceResult::Left
+            {
+                groups[g_a].swap_remove(item_idx_in_group_a);
+                groups[g_b].swap_remove(item_idx_in_group_b);
+                match interactor.output_query(&groups[g_a], &groups[g_b]) {
+                    BalanceResult::Right | BalanceResult::Unknown => {
+                        groups[g_a].push(item_idx_a);
+                        groups[g_b].push(item_idx_b);
+                    }
+                    _ => {
+                        eprintln!("hi");
+                        groups[g_b].push(item_idx_a);
+                        if !update_rank(&mut rank, &groups, true, heaviest_g_idx, input, interactor)
+                        {
+                            groups = copied_groups;
+                            continue;
                         }
-                        _ => continue,
+                        groups[g_a].push(item_idx_b);
+                        if !update_rank(
+                            &mut rank,
+                            &groups,
+                            false,
+                            heaviest_g_idx,
+                            input,
+                            interactor,
+                        ) {
+                            groups = copied_groups;
+                            continue;
+                        }
                     }
                 }
-                _ => continue,
             }
         }
 

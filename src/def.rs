@@ -5,6 +5,7 @@ pub struct Input {
     pub q: usize,
 }
 
+#[derive(PartialEq, Eq)]
 pub enum BalanceResult {
     Left,
     Right,
