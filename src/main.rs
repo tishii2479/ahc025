@@ -20,14 +20,14 @@ fn action_move(
 
     groups[rank[heavier_g_idx]].swap_remove(item_idx_in_group);
 
-    // 集合の重さの差が悪化したら不採用
-    if balancer.get_result(
+    // 集合の重さの差が改善しなければ不採用
+    match balancer.get_result(
         &groups[rank[lighter_g_idx]],
         &groups[rank[heavier_g_idx]],
         interactor,
-    ) == BalanceResult::Right
-    {
-        return false;
+    ) {
+        BalanceResult::Right | BalanceResult::Equal => return false,
+        _ => {}
     }
 
     if !update_rank(
@@ -53,6 +53,7 @@ fn action_move(
     ) {
         return false;
     }
+
     true
 }
 
@@ -71,9 +72,9 @@ fn action_swap(
     let item_idx_b = groups[rank[heavier_g_idx]][item_idx_in_group_b];
 
     // 入れ替えようとしているアイテムの大小関係が集合の大小関係と一致しなければ不採用
-    if balancer.get_result(&vec![item_idx_a], &vec![item_idx_b], interactor) != BalanceResult::Left
-    {
-        return false;
+    match balancer.get_result(&vec![item_idx_a], &vec![item_idx_b], interactor) {
+        BalanceResult::Left | BalanceResult::Equal => {}
+        _ => return false,
     }
 
     groups[rank[lighter_g_idx]].swap_remove(item_idx_in_group_a);
@@ -87,6 +88,7 @@ fn action_swap(
         BalanceResult::Right | BalanceResult::Unknown => {
             groups[rank[lighter_g_idx]].push(item_idx_a);
             groups[rank[heavier_g_idx]].push(item_idx_b);
+            return false;
         }
         _ => {
             groups[rank[heavier_g_idx]].push(item_idx_a);
@@ -113,9 +115,24 @@ fn action_swap(
             ) {
                 return false;
             }
+            return true;
         }
     }
-    true
+}
+
+fn select_g_idx_pair(groups: &Vec<Vec<usize>>, rank: &Vec<usize>, input: &Input) -> (usize, usize) {
+    let mut heavier_g_idx;
+    let mut lighter_g_idx;
+    loop {
+        let par = 1 + (time::elapsed_seconds() * 5.0 / (TIME_LIMIT - 0.1)).round() as usize;
+        lighter_g_idx = rnd::gen_range(0, par.min(input.d / 2));
+        heavier_g_idx = rnd::gen_range((input.d - input.d.min(par)).max(input.d / 2), input.d);
+
+        if groups[rank[heavier_g_idx]].len() > 1 {
+            break;
+        }
+    }
+    (lighter_g_idx, heavier_g_idx)
 }
 
 fn solve(input: &Input, interactor: &mut Interactor) {
@@ -139,19 +156,7 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         // TODO: ロールバックの高速化
         let copied_groups = groups.clone();
 
-        let mut heavier_g_idx;
-        let mut lighter_g_idx;
-        loop {
-            let par = 1 + (time::elapsed_seconds() * 5.0 / (TIME_LIMIT - 0.1)).round() as usize;
-            lighter_g_idx = rnd::gen_range(0, par.min(input.d / 2));
-            heavier_g_idx = rnd::gen_range((input.d - input.d.min(par)).max(input.d / 2), input.d);
-
-            if groups[rank[heavier_g_idx]].len() > 1 {
-                break;
-            }
-        }
-
-        trial_count += 1;
+        let (lighter_g_idx, heavier_g_idx) = select_g_idx_pair(&groups, &rank, input);
 
         let action = if rnd::nextf() < 0.5 {
             action_move
@@ -159,6 +164,7 @@ fn solve(input: &Input, interactor: &mut Interactor) {
             action_swap
         };
 
+        trial_count += 1;
         if action(
             heavier_g_idx,
             lighter_g_idx,
@@ -168,8 +174,12 @@ fn solve(input: &Input, interactor: &mut Interactor) {
             &mut balancer,
             interactor,
         ) {
-            move_adopted_count += 1;
-            eprintln!("[{} / {}] adopt_move", interactor.query_count, input.q);
+            if action == action_move {
+                move_adopted_count += 1;
+            } else {
+                swap_adopted_count += 1;
+            }
+            eprintln!("[{} / {}] adopt", interactor.query_count, input.q);
         } else {
             groups = copied_groups;
         }
