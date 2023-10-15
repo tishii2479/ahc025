@@ -1,3 +1,5 @@
+pub const TIME_LIMIT: f64 = 1.9;
+
 #[derive(Debug)]
 pub struct Input {
     pub n: usize,

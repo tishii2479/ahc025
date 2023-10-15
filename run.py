@@ -10,6 +10,8 @@ from typing import List, Optional
 import pandas as pd
 from joblib import Parallel, delayed
 
+TIME_LIMIT = 10.0
+
 
 def setup_logger() -> logging.Logger:
     logger = getLogger(__name__)
@@ -76,7 +78,9 @@ def run_case(
 ) -> Result:
     while True:
         cmd = f"{solver_cmd} < {input_file} > {output_file}"
-        proc = subprocess.run(cmd, shell=True, stderr=subprocess.PIPE)
+        proc = subprocess.run(
+            cmd, shell=True, stderr=subprocess.PIPE, timeout=TIME_LIMIT
+        )
         stderr = proc.stderr.decode("utf-8")
         result_str = stderr[stderr.find("result:") + len("result:") :]
         try:
@@ -138,10 +142,10 @@ def evaluate_absolute_score(
     )
 
     logger.info(f"Raw score mean: {score_df.score.mean()}")
-    logger.info("Top 10 improvements:")
-    logger.info(score_df.sort_values(by="score")[:10])
-    logger.info("Top 10 aggravations:")
-    logger.info(score_df.sort_values(by="score", ascending=False)[:10])
+    logger.info("Top 25 improvements:")
+    logger.info(score_df.sort_values(by="score")[:25])
+    logger.info("Top 25 aggravations:")
+    logger.info(score_df.sort_values(by="score", ascending=False)[:25])
 
     if columns is not None:
         assert 1 <= len(columns) <= 2
@@ -175,10 +179,10 @@ def evaluate_relative_score(
 
     logger.info(f"Raw score mean: {score_df.score.mean()}")
     logger.info(f"Relative score mean: {score_df['relative_score'].mean()}")
-    logger.info("Top 10 improvements:")
-    logger.info(score_df.sort_values(by="relative_score")[:10])
-    logger.info("Top 10 aggravations:")
-    logger.info(score_df.sort_values(by="relative_score", ascending=False)[:10])
+    logger.info("Top 25 improvements:")
+    logger.info(score_df.sort_values(by="relative_score")[:25])
+    logger.info("Top 25 aggravations:")
+    logger.info(score_df.sort_values(by="relative_score", ascending=False)[:25])
     logger.info(
         f"Longest duration: {score_df.sort_values(by='duration').duration.iloc[-1]}"
     )
