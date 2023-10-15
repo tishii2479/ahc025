@@ -135,7 +135,6 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     let mut move_adopted_count = 0;
     let mut swap_adopted_count = 0;
 
-    // 一番重いグループから軽いグループに移す
     while interactor.query_count < input.q && time::elapsed_seconds() < TIME_LIMIT - 0.2 {
         // TODO: ロールバックの高速化
         let copied_groups = groups.clone();
@@ -153,36 +152,26 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         }
 
         trial_count += 1;
-        if rnd::nextf() < 0.5 {
-            if action_move(
-                heavier_g_idx,
-                lighter_g_idx,
-                &mut groups,
-                &mut rank,
-                input,
-                &mut balancer,
-                interactor,
-            ) {
-                move_adopted_count += 1;
-                eprintln!("[{} / {}] adopt_move", interactor.query_count, input.q);
-            } else {
-                groups = copied_groups;
-            }
+
+        let action = if rnd::nextf() < 0.5 {
+            action_move
         } else {
-            if action_swap(
-                heavier_g_idx,
-                lighter_g_idx,
-                &mut groups,
-                &mut rank,
-                input,
-                &mut balancer,
-                interactor,
-            ) {
-                swap_adopted_count += 1;
-                eprintln!("[{} / {}] adopt_swap", interactor.query_count, input.q);
-            } else {
-                groups = copied_groups;
-            }
+            action_swap
+        };
+
+        if action(
+            heavier_g_idx,
+            lighter_g_idx,
+            &mut groups,
+            &mut rank,
+            input,
+            &mut balancer,
+            interactor,
+        ) {
+            move_adopted_count += 1;
+            eprintln!("[{} / {}] adopt_move", interactor.query_count, input.q);
+        } else {
+            groups = copied_groups;
         }
 
         let d = groups_to_output_d(&groups, input);
