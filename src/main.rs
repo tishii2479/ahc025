@@ -56,6 +56,68 @@ fn action_move(
     true
 }
 
+fn action_swap(
+    heavier_g_idx: usize,
+    lighter_g_idx: usize,
+    groups: &mut Vec<Vec<usize>>,
+    rank: &mut Vec<usize>,
+    input: &Input,
+    balancer: &mut Balancer,
+    interactor: &mut Interactor,
+) -> bool {
+    let item_idx_in_group_a = rnd::gen_range(0, groups[rank[lighter_g_idx]].len());
+    let item_idx_in_group_b = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
+    let item_idx_a = groups[rank[lighter_g_idx]][item_idx_in_group_a];
+    let item_idx_b = groups[rank[heavier_g_idx]][item_idx_in_group_b];
+
+    // 入れ替えようとしているアイテムの大小関係が集合の大小関係と一致しなければ不採用
+    if balancer.get_result(&vec![item_idx_a], &vec![item_idx_b], interactor) != BalanceResult::Left
+    {
+        return false;
+    }
+
+    groups[rank[lighter_g_idx]].swap_remove(item_idx_in_group_a);
+    groups[rank[heavier_g_idx]].swap_remove(item_idx_in_group_b);
+    match balancer.get_result(
+        &groups[rank[lighter_g_idx]],
+        &groups[rank[heavier_g_idx]],
+        interactor,
+    ) {
+        // 集合の重さの差が悪化したら不採用
+        BalanceResult::Right | BalanceResult::Unknown => {
+            groups[rank[lighter_g_idx]].push(item_idx_a);
+            groups[rank[heavier_g_idx]].push(item_idx_b);
+        }
+        _ => {
+            groups[rank[heavier_g_idx]].push(item_idx_a);
+            if !update_rank(
+                rank,
+                &groups,
+                true,
+                lighter_g_idx,
+                heavier_g_idx,
+                input,
+                interactor,
+            ) {
+                return false;
+            }
+            groups[rank[lighter_g_idx]].push(item_idx_b);
+            if !update_rank(
+                rank,
+                &groups,
+                false,
+                lighter_g_idx,
+                heavier_g_idx,
+                input,
+                interactor,
+            ) {
+                return false;
+            }
+        }
+    }
+    true
+}
+
 fn solve(input: &Input, interactor: &mut Interactor) {
     let mut balancer = Balancer::new(input);
 
@@ -107,60 +169,19 @@ fn solve(input: &Input, interactor: &mut Interactor) {
                 groups = copied_groups;
             }
         } else {
-            let item_idx_in_group_a = rnd::gen_range(0, groups[rank[lighter_g_idx]].len());
-            let item_idx_in_group_b = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
-            let item_idx_a = groups[rank[lighter_g_idx]][item_idx_in_group_a];
-            let item_idx_b = groups[rank[heavier_g_idx]][item_idx_in_group_b];
-
-            // 入れ替えようとしているアイテムの大小関係が集合の大小関係と一致しなければ不採用
-            if balancer.get_result(&vec![item_idx_a], &vec![item_idx_b], interactor)
-                != BalanceResult::Left
-            {
-                continue;
-            }
-
-            groups[rank[lighter_g_idx]].swap_remove(item_idx_in_group_a);
-            groups[rank[heavier_g_idx]].swap_remove(item_idx_in_group_b);
-            match balancer.get_result(
-                &groups[rank[lighter_g_idx]],
-                &groups[rank[heavier_g_idx]],
+            if action_swap(
+                heavier_g_idx,
+                lighter_g_idx,
+                &mut groups,
+                &mut rank,
+                input,
+                &mut balancer,
                 interactor,
             ) {
-                // 集合の重さの差が悪化したら不採用
-                BalanceResult::Right | BalanceResult::Unknown => {
-                    groups[rank[lighter_g_idx]].push(item_idx_a);
-                    groups[rank[heavier_g_idx]].push(item_idx_b);
-                }
-                _ => {
-                    swap_adopted_count += 1;
-                    eprintln!("[{} / {}] adopt_swap", interactor.query_count, input.q);
-                    groups[rank[heavier_g_idx]].push(item_idx_a);
-                    if !update_rank(
-                        &mut rank,
-                        &groups,
-                        true,
-                        lighter_g_idx,
-                        heavier_g_idx,
-                        input,
-                        interactor,
-                    ) {
-                        groups = copied_groups;
-                        continue;
-                    }
-                    groups[rank[lighter_g_idx]].push(item_idx_b);
-                    if !update_rank(
-                        &mut rank,
-                        &groups,
-                        false,
-                        lighter_g_idx,
-                        heavier_g_idx,
-                        input,
-                        interactor,
-                    ) {
-                        groups = copied_groups;
-                        continue;
-                    }
-                }
+                swap_adopted_count += 1;
+                eprintln!("[{} / {}] adopt_swap", interactor.query_count, input.q);
+            } else {
+                groups = copied_groups;
             }
         }
 
