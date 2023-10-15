@@ -38,6 +38,7 @@ fn action_move(
         heavier_g_idx,
         input,
         interactor,
+        balancer,
     ) {
         return false;
     }
@@ -50,6 +51,7 @@ fn action_move(
         heavier_g_idx,
         input,
         interactor,
+        balancer,
     ) {
         return false;
     }
@@ -100,6 +102,7 @@ fn action_swap(
                 heavier_g_idx,
                 input,
                 interactor,
+                balancer,
             ) {
                 return false;
             }
@@ -112,6 +115,7 @@ fn action_swap(
                 heavier_g_idx,
                 input,
                 interactor,
+                balancer,
             ) {
                 return false;
             }
@@ -230,6 +234,7 @@ fn action_swap2(
                 heavier_g_idx,
                 input,
                 interactor,
+                balancer,
             ) {
                 return false;
             }
@@ -244,6 +249,7 @@ fn action_swap2(
                 heavier_g_idx,
                 input,
                 interactor,
+                balancer,
             ) {
                 return false;
             }
@@ -278,7 +284,7 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     }
 
     // ソートして順位をつける
-    let mut rank = sort_groups(&groups, input, interactor);
+    let mut rank = sort_groups(&groups, input, interactor, &mut balancer);
     eprintln!("after_sort: {} / {}", interactor.query_count, input.q);
 
     let mut trial_count = 0;

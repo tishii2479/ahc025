@@ -160,12 +160,14 @@ pub fn sort_groups(
     groups: &Vec<Vec<usize>>,
     input: &Input,
     interactor: &mut Interactor,
+    balancer: &mut Balancer,
 ) -> Vec<usize> {
     fn q_sort(
         targets: Vec<usize>,
         groups: &Vec<Vec<usize>>,
         input: &Input,
         interactor: &mut Interactor,
+        balancer: &mut Balancer,
     ) -> Vec<usize> {
         if targets.len() <= 1 {
             return targets;
@@ -177,7 +179,7 @@ pub fn sort_groups(
             if g_idx == pivot_g_idx {
                 continue;
             }
-            match interactor.output_query(&groups[pivot_g_idx], &groups[g_idx]) {
+            match balancer.get_result(&groups[pivot_g_idx], &groups[g_idx], interactor) {
                 BalanceResult::Left => right_targets.push(g_idx), // <
                 BalanceResult::Right => left_targets.push(g_idx), // >
                 BalanceResult::Equal => right_targets.push(g_idx), // =
@@ -185,13 +187,19 @@ pub fn sort_groups(
             }
         }
         [
-            q_sort(left_targets, groups, input, interactor),
-            q_sort(right_targets, groups, input, interactor),
+            q_sort(left_targets, groups, input, interactor, balancer),
+            q_sort(right_targets, groups, input, interactor, balancer),
         ]
         .concat()
     }
 
-    q_sort((0..groups.len()).collect(), groups, input, interactor)
+    q_sort(
+        (0..groups.len()).collect(),
+        groups,
+        input,
+        interactor,
+        balancer,
+    )
 }
 
 pub fn update_rank(
@@ -202,6 +210,7 @@ pub fn update_rank(
     heaviest_g_idx: usize,
     input: &Input,
     interactor: &mut Interactor,
+    balancer: &mut Balancer,
 ) -> bool {
     if input.d < 10 {
         update_rank_linear_search(
@@ -211,6 +220,7 @@ pub fn update_rank(
             lighter_g_idx,
             heaviest_g_idx,
             interactor,
+            balancer,
         )
     } else {
         update_rank_binary_search(
@@ -220,6 +230,7 @@ pub fn update_rank(
             lighter_g_idx,
             heaviest_g_idx,
             interactor,
+            balancer,
         )
     }
 }
@@ -231,6 +242,7 @@ pub fn update_rank_linear_search(
     lighter_g_idx: usize,
     heavier_g_idx: usize,
     interactor: &mut Interactor,
+    balancer: &mut Balancer,
 ) -> bool {
     let order = if from_up {
         (lighter_g_idx..heavier_g_idx).rev().collect::<Vec<usize>>()
@@ -238,7 +250,7 @@ pub fn update_rank_linear_search(
         (lighter_g_idx..heavier_g_idx).collect::<Vec<usize>>()
     };
     for i in order {
-        match interactor.output_query(&groups[rank[i]], &groups[rank[i + 1]]) {
+        match balancer.get_result(&groups[rank[i]], &groups[rank[i + 1]], interactor) {
             BalanceResult::Left => break,                // <
             BalanceResult::Right => rank.swap(i, i + 1), // >
             BalanceResult::Equal => break,               // =
@@ -255,6 +267,7 @@ pub fn update_rank_binary_search(
     lighter_g_idx: usize,
     heavier_g_idx: usize,
     interactor: &mut Interactor,
+    balancer: &mut Balancer,
 ) -> bool {
     let move_g_idx = if from_up {
         heavier_g_idx
@@ -267,7 +280,7 @@ pub fn update_rank_binary_search(
     let mut r = rank.len() as i32;
     while r - l > 1 {
         let m = (l + r) / 2;
-        match interactor.output_query(&groups[rank[m as usize]], &groups[move_g]) {
+        match balancer.get_result(&groups[rank[m as usize]], &groups[move_g], interactor) {
             BalanceResult::Left | BalanceResult::Equal => l = m, // <
             BalanceResult::Right => r = m,                       // >
             BalanceResult::Unknown => {

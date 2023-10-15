@@ -87,8 +87,10 @@ def run_case(
             result_json = json.loads(result_str)
             break
         except json.JSONDecodeError as e:
-            print(e)
-            print(f"failed to parse result_str: {result_str}, input_file: {input_file}")
+            logger.error(e)
+            logger.error(
+                f"failed to parse result_str: {result_str}, input_file: {input_file}"
+            )
 
     result = Result(result_json, input_file, solver_version)
     return result
@@ -189,6 +191,8 @@ def evaluate_relative_score(
     )
     logger.info(score_df.score.describe())
     logger.info(score_df.relative_score.describe())
+    logger.info(f"improve case count:   {(score_df.relative_score < 1.0).sum()}")
+    logger.info(f"aggravate case count: {(score_df.relative_score > 1.0).sum()}")
 
     if columns is not None:
         assert 1 <= len(columns) <= 2
@@ -204,7 +208,9 @@ def evaluate_relative_score(
 
 def list_solvers(database_csv: str) -> None:
     database_df = pd.read_csv(database_csv)
-    print(database_df.groupby("solver_version")["score"].agg("mean").sort_values())
+    logger.info(
+        database_df.groupby("solver_version")["score"].agg("mean").sort_values()
+    )
 
 
 if __name__ == "__main__":
