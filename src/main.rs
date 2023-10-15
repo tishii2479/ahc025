@@ -120,7 +120,7 @@ fn update_rank_binary_search(
 struct Balancer {
     hash_for_item: Vec<u64>,
     left_edges: HashMap<u64, Vec<u64>>,  // first <= second
-    right_edges: HashMap<u64, Vec<u64>>, // first >= second
+    right_edges: HashMap<u64, Vec<u64>>, // first > second
 }
 
 impl Balancer {
@@ -129,7 +129,6 @@ impl Balancer {
         for i in 0..input.n {
             hash_for_item[i] = rnd::gen_range(0, usize::MAX) as u64;
         }
-        dbg!(&hash_for_item);
         Balancer {
             hash_for_item,
             left_edges: HashMap::new(),
@@ -144,13 +143,13 @@ impl Balancer {
         interactor: &mut Interactor,
     ) -> BalanceResult {
         let search_result = self.search_result(left_v, right_v);
-        // if search_result != BalanceResult::Unknown {
-        //     eprintln!(
-        //         "found cached search result {:?} for: {:?} -> {:?}",
-        //         search_result, left_v, right_v
-        //     );
-        //     return search_result;
-        // }
+        if search_result != BalanceResult::Unknown {
+            eprintln!(
+                "found cached search result {:?} for: {:?} -> {:?}",
+                search_result, left_v, right_v
+            );
+            return search_result;
+        }
         let query_result = interactor.output_query(left_v, right_v);
         let left_hash = self.to_hash(left_v);
         let right_hash = self.to_hash(right_v);
@@ -166,17 +165,13 @@ impl Balancer {
         }
 
         match query_result {
-            BalanceResult::Left => {
+            BalanceResult::Left | BalanceResult::Equal => {
+                add_edge(&mut self.left_edges, left_hash, right_hash);
+                add_edge(&mut self.right_edges, right_hash, left_hash);
                 add_edge(&mut self.left_edges, left_hash, right_hash);
                 add_edge(&mut self.right_edges, right_hash, left_hash);
             }
             BalanceResult::Right => {
-                add_edge(&mut self.left_edges, right_hash, left_hash);
-                add_edge(&mut self.right_edges, left_hash, right_hash);
-            }
-            BalanceResult::Equal => {
-                add_edge(&mut self.left_edges, left_hash, right_hash);
-                add_edge(&mut self.right_edges, right_hash, left_hash);
                 add_edge(&mut self.left_edges, right_hash, left_hash);
                 add_edge(&mut self.right_edges, left_hash, right_hash);
             }
@@ -198,7 +193,6 @@ impl Balancer {
                         if *u == to_hash {
                             return true;
                         }
-                        eprintln!("{} -> {}, {} -> {}", v, u, from_hash, to_hash);
                         q.push(*u);
                     }
                 }
@@ -242,6 +236,8 @@ fn solve(input: &Input, interactor: &mut Interactor) {
 
     // 一番重いグループから軽いグループに移す
     while interactor.query_count < input.q {
+        eprintln!("[{} / {}]", interactor.query_count, input.q);
+
         // TODO: ロールバックの高速化
         let copied_groups = groups.clone();
         let mut heaviest_g_idx = input.d - 1;
