@@ -54,6 +54,7 @@ impl Balancer {
         } else if left_v.len() == 0 && right_v.len() == 0 {
             return BalanceResult::Equal;
         }
+        assert!(left_v.len() > 0 && right_v.len() > 0);
 
         let left_hash = self.to_hash(left_v);
         let right_hash = self.to_hash(right_v);

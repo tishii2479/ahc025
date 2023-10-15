@@ -127,7 +127,6 @@ fn action_swap(
 ///     1. a_1 < b_1 + b_2となるようにアイテムb_2をBから選択する
 /// 4. a_1 < b_1の時
 ///     1. a_1 + a_2 < b_1となるようなa_2があればAから選択する
-/// 5. 今まで通り
 ///
 fn action_swap2(
     heavier_g_idx: usize,
@@ -274,7 +273,7 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         let p = rnd::nextf();
         let action = if p < 0.5 {
             action_move
-        } else if p < 1.0 {
+        } else if p < 1. {
             action_swap
         } else {
             action_swap2
