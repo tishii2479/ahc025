@@ -135,21 +135,26 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         // TODO: ロールバックの高速化
         let copied_groups = groups.clone();
         let mut heaviest_g_idx = input.d - 1;
+        // 重いグループが一個しかアイテムがなければ、グループを変更する
         while groups[rank[heaviest_g_idx]].len() == 1 {
             heaviest_g_idx -= 1;
         }
+
         trial_count += 1;
         if rnd::nextf() < 0.5 {
             let item_idx_in_group = rnd::gen_range(0, groups[rank[heaviest_g_idx]].len());
             let item_idx = groups[rank[heaviest_g_idx]][item_idx_in_group];
 
             groups[rank[heaviest_g_idx]].swap_remove(item_idx_in_group);
+
+            // 集合の重さの差が悪化したら不採用
             if interactor.output_query(&groups[rank[0]], &groups[rank[heaviest_g_idx]])
                 == BalanceResult::Right
             {
                 groups[rank[heaviest_g_idx]].push(item_idx);
                 continue;
             }
+
             move_adopted_count += 1;
             eprintln!("[{} / {}] adopt_move", interactor.query_count, input.q);
             if !update_rank(&mut rank, &groups, true, heaviest_g_idx, input, interactor) {
@@ -166,13 +171,17 @@ fn solve(input: &Input, interactor: &mut Interactor) {
             let item_idx_in_group_b = rnd::gen_range(0, groups[rank[heaviest_g_idx]].len());
             let item_idx_a = groups[rank[0]][item_idx_in_group_a];
             let item_idx_b = groups[rank[heaviest_g_idx]][item_idx_in_group_b];
+
+            // 入れ替えようとしているアイテムの大小関係が集合の大小関係と一致しなければ不採用
             if interactor.output_query(&vec![item_idx_a], &vec![item_idx_b]) != BalanceResult::Left
             {
                 continue;
             }
+
             groups[rank[0]].swap_remove(item_idx_in_group_a);
             groups[rank[heaviest_g_idx]].swap_remove(item_idx_in_group_b);
             match interactor.output_query(&groups[rank[0]], &groups[rank[heaviest_g_idx]]) {
+                // 集合の重さの差が悪化したら不採用
                 BalanceResult::Right | BalanceResult::Unknown => {
                     groups[rank[0]].push(item_idx_a);
                     groups[rank[heaviest_g_idx]].push(item_idx_b);
