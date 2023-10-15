@@ -23,16 +23,17 @@ pub enum BalanceResult {
 }
 
 pub struct Balancer {
-    hash_for_item: Vec<u64>,
-    left_edges: HashMap<u64, Vec<u64>>,  // first <= second
-    right_edges: HashMap<u64, Vec<u64>>, // first > second
+    hash_for_item: Vec<u128>,
+    left_edges: HashMap<u128, Vec<u128>>,  // first <= second
+    right_edges: HashMap<u128, Vec<u128>>, // first > second
 }
 
 impl Balancer {
     pub fn new(input: &Input) -> Balancer {
         let mut hash_for_item = vec![0; input.n];
+        // NOTE: なぜか残すと乱数が強くなる、、、関係ないと思うが、一旦放置
         for i in 0..input.n {
-            hash_for_item[i] = rnd::gen_range(0, usize::MAX) as u64;
+            hash_for_item[i] = rnd::gen_range(0, usize::MAX) as u128;
         }
         Balancer {
             hash_for_item,
@@ -47,16 +48,13 @@ impl Balancer {
         right_v: &Vec<usize>,
         interactor: &mut Interactor,
     ) -> BalanceResult {
-        if left_v.len() == 0 && right_v.len() > 0 {
-            return BalanceResult::Left;
-        } else if left_v.len() > 0 && right_v.len() == 0 {
-            return BalanceResult::Right;
-        } else if left_v.len() == 0 && right_v.len() == 0 {
-            return BalanceResult::Equal;
+        let check_empty_result = self.check_empty_comparison(left_v, right_v);
+        if check_empty_result != BalanceResult::Unknown {
+            return check_empty_result;
         }
         assert!(left_v.len() > 0 && right_v.len() > 0);
 
-        fn add_edge(edges: &mut HashMap<u64, Vec<u64>>, first_hash: u64, second_hash: u64) {
+        fn add_edge(edges: &mut HashMap<u128, Vec<u128>>, first_hash: u128, second_hash: u128) {
             if let Some(current_edges) = edges.get_mut(&first_hash) {
                 if !current_edges.contains(&second_hash) {
                     current_edges.push(second_hash);
@@ -104,7 +102,7 @@ impl Balancer {
         let left_hash = self.to_hash(left_v);
         let right_hash = self.to_hash(right_v);
 
-        fn is_reachable(edges: &HashMap<u64, Vec<u64>>, from_hash: u64, to_hash: u64) -> bool {
+        fn is_reachable(edges: &HashMap<u128, Vec<u128>>, from_hash: u128, to_hash: u128) -> bool {
             // TODO: 再確保が起こらないようにする
             let mut q = VecDeque::new();
             let mut seen = HashSet::new();
@@ -135,10 +133,21 @@ impl Balancer {
         BalanceResult::Unknown
     }
 
-    fn to_hash(&self, v: &Vec<usize>) -> u64 {
+    fn check_empty_comparison(&self, left_v: &Vec<usize>, right_v: &Vec<usize>) -> BalanceResult {
+        if left_v.len() == 0 && right_v.len() > 0 {
+            return BalanceResult::Left;
+        } else if left_v.len() > 0 && right_v.len() == 0 {
+            return BalanceResult::Right;
+        } else if left_v.len() == 0 && right_v.len() == 0 {
+            return BalanceResult::Equal;
+        }
+        BalanceResult::Unknown
+    }
+
+    fn to_hash(&self, v: &Vec<usize>) -> u128 {
         let mut hash = 0;
         for e in v.iter() {
-            hash ^= self.hash_for_item[*e];
+            hash |= 1 << *e;
         }
         hash
     }
@@ -210,6 +219,7 @@ pub fn update_rank(
     interactor: &mut Interactor,
     balancer: &mut Balancer,
 ) -> bool {
+    // :param
     if input.d < 10 {
         update_rank_linear_search(
             rank,
