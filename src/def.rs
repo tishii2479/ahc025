@@ -56,6 +56,16 @@ impl Balancer {
         }
         assert!(left_v.len() > 0 && right_v.len() > 0);
 
+        fn add_edge(edges: &mut HashMap<u64, Vec<u64>>, first_hash: u64, second_hash: u64) {
+            if let Some(current_edges) = edges.get_mut(&first_hash) {
+                if !current_edges.contains(&second_hash) {
+                    current_edges.push(second_hash);
+                }
+            } else {
+                edges.insert(first_hash, vec![second_hash]);
+            }
+        }
+
         let left_hash = self.to_hash(left_v);
         let right_hash = self.to_hash(right_v);
 
@@ -75,22 +85,10 @@ impl Balancer {
         }
         let query_result = interactor.output_query(left_v, right_v);
 
-        fn add_edge(edges: &mut HashMap<u64, Vec<u64>>, first_hash: u64, second_hash: u64) {
-            if let Some(current_edges) = edges.get_mut(&first_hash) {
-                if !current_edges.contains(&second_hash) {
-                    current_edges.push(second_hash);
-                }
-            } else {
-                edges.insert(first_hash, vec![second_hash]);
-            }
-        }
-
         match query_result {
             BalanceResult::Left | BalanceResult::Equal => {
                 add_edge(&mut self.left_edges, left_hash, right_hash);
                 add_edge(&mut self.right_edges, right_hash, left_hash);
-                // add_edge(&mut self.left_edges, left_hash, right_hash);
-                // add_edge(&mut self.right_edges, right_hash, left_hash);
             }
             BalanceResult::Right => {
                 add_edge(&mut self.left_edges, right_hash, left_hash);

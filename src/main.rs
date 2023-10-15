@@ -141,6 +141,8 @@ fn action_swap2(
     balancer: &mut Balancer,
     interactor: &mut Interactor,
 ) -> bool {
+    // NOTE: trial_count = 0にすればaction_swapと一緒の挙動
+    const TRIAL_COUNT: usize = 3;
     let a1 = rnd::gen_range(0, groups[rank[lighter_g_idx]].len());
     let b1 = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
     let mut item_indices_a = vec![groups[rank[lighter_g_idx]][a1]];
@@ -151,7 +153,7 @@ fn action_swap2(
     // 入れ替えようとしているアイテムの大小関係が集合の大小関係と一致しなければ不採用
     match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
         BalanceResult::Right => {
-            for _ in 0..3 {
+            for _ in 0..TRIAL_COUNT {
                 let b2 = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
                 if item_indices_in_b.contains(&b2) {
                     continue;
@@ -168,7 +170,7 @@ fn action_swap2(
             }
         }
         BalanceResult::Left => {
-            for _ in 0..3 {
+            for _ in 0..TRIAL_COUNT {
                 let a2 = rnd::gen_range(0, groups[rank[lighter_g_idx]].len());
                 if item_indices_in_a.contains(&a2) {
                     continue;
@@ -253,7 +255,9 @@ fn action_swap2(
             ) {
                 return false;
             }
-            dbg!(&item_indices_a, &item_indices_b);
+            if item_indices_a.len() > 1 || item_indices_b.len() > 1 {
+                eprintln!("swap2: {:?} {:?}", item_indices_a, item_indices_b);
+            }
             return true;
         }
     }
