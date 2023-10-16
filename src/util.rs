@@ -1,5 +1,9 @@
 #![allow(unused)]
 
+use core::hash::BuildHasherDefault;
+use core::hash::Hasher;
+use std::collections::{HashMap, HashSet};
+
 pub mod rnd {
     static mut S: usize = 88172645463325252;
 
@@ -51,3 +55,27 @@ pub mod time {
         }
     }
 }
+
+#[derive(Default)]
+pub struct NopHasher {
+    hash: u128,
+}
+
+impl Hasher for NopHasher {
+    fn write(&mut self, _: &[u8]) {
+        panic!();
+    }
+
+    #[inline]
+    fn write_u128(&mut self, n: u128) {
+        self.hash = n;
+    }
+
+    #[inline]
+    fn finish(&self) -> u64 {
+        panic!();
+    }
+}
+
+pub type NopHashMap<K, V> = HashMap<K, V, BuildHasherDefault<NopHasher>>;
+pub type NopHashSet<V> = HashSet<V, BuildHasherDefault<NopHasher>>;

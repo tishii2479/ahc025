@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-use std::collections::HashSet;
 use std::collections::VecDeque;
 
 pub const TIME_LIMIT: f64 = 1.9;
@@ -23,19 +21,19 @@ pub enum BalanceResult {
 }
 
 pub struct Balancer {
-    left_edges: HashMap<u128, Vec<u128>>,  // first <= second
-    right_edges: HashMap<u128, Vec<u128>>, // first > second
+    pub left_edges: rustc_hash::FxHashMap<u128, Vec<u128>>, // first <= second
+    pub right_edges: rustc_hash::FxHashMap<u128, Vec<u128>>, // first > second
 }
 
 impl Balancer {
     pub fn new(input: &Input) -> Balancer {
         // NOTE: なぜか残すと乱数が強くなる、、、関係ないと思うが、一旦放置
-        // for i in 0..input.n {
+        // for _ in 0..input.n {
         //     rnd::gen_range(0, usize::MAX) as u128;
         // }
         Balancer {
-            left_edges: HashMap::new(),
-            right_edges: HashMap::new(),
+            left_edges: rustc_hash::FxHashMap::default(),
+            right_edges: rustc_hash::FxHashMap::default(),
         }
     }
 
@@ -95,13 +93,19 @@ impl Balancer {
     fn search_result(&self, left_hash: u128, right_hash: u128) -> BalanceResult {
         // NOTE: left = rightの時は稀（だと思う）ので、ここでは無視している
 
-        fn is_reachable(edges: &HashMap<u128, Vec<u128>>, from_hash: u128, to_hash: u128) -> bool {
+        fn is_reachable(
+            edges: &rustc_hash::FxHashMap<u128, Vec<u128>>,
+            from_hash: u128,
+            to_hash: u128,
+        ) -> bool {
+            // static mut duration: f64 = 0.;
+            // let start = time::elapsed_seconds();
             // TODO: 再確保が起こらないようにする
             let mut q = VecDeque::new();
-            let mut seen = HashSet::new();
-            q.push_back(from_hash);
+            let mut seen = rustc_hash::FxHashSet::default();
+            q.push_back((from_hash, 0));
             seen.insert(from_hash);
-            while let Some(v) = q.pop_front() {
+            while let Some((v, depth)) = q.pop_front() {
                 if let Some(v_edges) = edges.get(&v) {
                     for u in v_edges {
                         if seen.contains(u) {
@@ -110,8 +114,11 @@ impl Balancer {
                         if *u == to_hash {
                             return true;
                         }
+                        if depth >= 3 {
+                            continue;
+                        }
                         seen.insert(*u);
-                        q.push_back(*u);
+                        q.push_back((*u, depth + 1));
                     }
                 }
             }
@@ -153,18 +160,18 @@ impl Balancer {
                     // v ^ u = 011000
                     // a = v & u = 000111
                     // v ^ a = 010000, u ^ a = 001000
-                    // if (v_hash ^ *u_hash).count_ones() == 2 {
-                    //     let a = v_hash & *u_hash;
-                    //     match self.search_result(v_hash ^ a, *u_hash ^ a) {
-                    //         BalanceResult::Left | BalanceResult::Equal => {
-                    //             additional_edges.push((v_hash, *u_hash));
-                    //         }
-                    //         BalanceResult::Right => {
-                    //             additional_edges.push((*u_hash, v_hash));
-                    //         }
-                    //         _ => {}
-                    //     }
-                    // }
+                    if (v_hash ^ *u_hash).count_ones() == 2 {
+                        let a = v_hash & *u_hash;
+                        match self.search_result(v_hash ^ a, *u_hash ^ a) {
+                            BalanceResult::Left | BalanceResult::Equal => {
+                                additional_edges.push((v_hash, *u_hash));
+                            }
+                            BalanceResult::Right => {
+                                additional_edges.push((*u_hash, v_hash));
+                            }
+                            _ => {}
+                        }
+                    }
                 }
             }
         }
@@ -196,7 +203,11 @@ impl Balancer {
     }
 }
 
-fn add_edge(edges: &mut HashMap<u128, Vec<u128>>, first_hash: u128, second_hash: u128) {
+fn add_edge(
+    edges: &mut rustc_hash::FxHashMap<u128, Vec<u128>>,
+    first_hash: u128,
+    second_hash: u128,
+) {
     if let Some(current_edges) = edges.get_mut(&first_hash) {
         if !current_edges.contains(&second_hash) {
             current_edges.push(second_hash);

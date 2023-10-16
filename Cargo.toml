@@ -71,5 +71,5 @@ overflow-checks = false
 # bitset-fixed = "=0.1.0"
 proconio = { version = "=0.4.5", features = ["derive"] }
 # text_io = "=0.1.12"
-# rustc-hash = "=1.1.0"
+rustc-hash = "=1.1.0"
 # smallvec = { version = "=1.11.0", features = ["const_generics", "const_new", "write", "union", "serde", "arbitrary"] }

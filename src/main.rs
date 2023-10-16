@@ -340,6 +340,9 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     eprintln!("swap_adopted_count:  {swap_adopted_count}");
     eprintln!("swap2_adopted_count: {swap2_adopted_count}");
 
+    // dbg!(&balancer.left_edges, &balancer.right_edges);
+    // dbg!(&balancer.left_edges.len(), &balancer.right_edges.len());
+
     let d = groups_to_output_d(&groups, input);
     interactor.output_d(&d, false);
 }
