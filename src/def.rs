@@ -340,8 +340,8 @@ pub fn update_rank_binary_search(
     };
     let move_g = rank[move_g_idx];
     rank.remove(move_g_idx);
-    let mut l = -1 as i32;
-    let mut r = rank.len() as i32;
+    let mut l = lighter_g_idx as i32 - 1;
+    let mut r = heavier_g_idx as i32;
     while r - l > 1 {
         let m = (l + r) / 2;
         match balancer.get_result(&groups[rank[m as usize]], &groups[move_g], interactor) {
