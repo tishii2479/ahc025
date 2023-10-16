@@ -65,7 +65,7 @@ impl Balancer {
         self.add_additional_edges(left_hash);
         self.add_additional_edges(right_hash);
 
-        let search_result = self.search_result(left_v, right_v);
+        let search_result = self.search_result(left_hash, right_hash);
         match search_result {
             BalanceResult::Unknown => {}
             BalanceResult::Left | BalanceResult::Equal => {
@@ -95,10 +95,8 @@ impl Balancer {
         query_result
     }
 
-    fn search_result(&self, left_v: &Vec<usize>, right_v: &Vec<usize>) -> BalanceResult {
+    fn search_result(&self, left_hash: u128, right_hash: u128) -> BalanceResult {
         // NOTE: left = rightの時は稀（だと思う）ので、ここでは無視している
-        let left_hash = self.to_hash(left_v);
-        let right_hash = self.to_hash(right_v);
 
         fn is_reachable(edges: &HashMap<u128, Vec<u128>>, from_hash: u128, to_hash: u128) -> bool {
             // TODO: 再確保が起こらないようにする
@@ -137,32 +135,40 @@ impl Balancer {
     ///
     fn add_additional_edges(&mut self, v_hash: u128) {
         let mut additional_edges = vec![]; // first < second
-        if !self.left_edges.contains_key(&v_hash) {
-            for (u_hash, _) in self.left_edges.iter() {
-                // 部分集合のチェック
-                if (v_hash & *u_hash) == *u_hash {
-                    additional_edges.push((*u_hash, v_hash));
-                    continue;
-                }
-                if (v_hash & *u_hash) == v_hash {
-                    additional_edges.push((v_hash, *u_hash));
-                    continue;
-                }
+        let edge_data = [&self.left_edges, &self.right_edges];
+        for edges in edge_data {
+            if !edges.contains_key(&v_hash) {
+                for (u_hash, _) in edges.iter() {
+                    // 部分集合のチェック
+                    if (v_hash & *u_hash) == *u_hash {
+                        additional_edges.push((*u_hash, v_hash));
+                        continue;
+                    }
+                    if (v_hash & *u_hash) == v_hash {
+                        additional_edges.push((v_hash, *u_hash));
+                        continue;
+                    }
 
-                // 差分が1個のものをチェック
-            }
-        }
-        if !self.right_edges.contains_key(&v_hash) {
-            for (u_hash, _) in self.right_edges.iter() {
-                // 部分集合のチェック
-                if (v_hash & *u_hash) == *u_hash {
-                    additional_edges.push((*u_hash, v_hash));
+                    // 差分が1個のものをチェック
+                    // 包含しているパターンは前まででチェックできている
+                    // v = 010111
+                    // u = 001111
+                    // v ^ u = 011000
+                    // a = v & u = 000111
+                    // v ^ a = 010000, u ^ a = 001000
+                    // if (v_hash ^ *u_hash).count_ones() == 2 {
+                    //     let a = v_hash & *u_hash;
+                    //     match self.search_result(v_hash ^ a, *u_hash ^ a) {
+                    //         BalanceResult::Left | BalanceResult::Equal => {
+                    //             additional_edges.push((v_hash, *u_hash));
+                    //         }
+                    //         BalanceResult::Right => {
+                    //             additional_edges.push((*u_hash, v_hash));
+                    //         }
+                    //         _ => {}
+                    //     }
+                    // }
                 }
-                if (v_hash & *u_hash) == v_hash {
-                    additional_edges.push((v_hash, *u_hash));
-                }
-
-                // 差分が1個のものをチェック
             }
         }
 

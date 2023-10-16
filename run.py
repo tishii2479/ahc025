@@ -148,6 +148,9 @@ def evaluate_absolute_score(
     logger.info(score_df.sort_values(by="score")[:10])
     logger.info("Top 10 aggravations:")
     logger.info(score_df.sort_values(by="score", ascending=False)[:10])
+    logger.info(
+        f"Longest duration: {score_df.sort_values(by='duration').duration.iloc[-1]}"
+    )
     logger.info(score_df.score.describe())
 
     if columns is not None:
