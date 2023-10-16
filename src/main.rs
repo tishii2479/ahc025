@@ -263,18 +263,10 @@ fn action_swap2(
     }
 }
 
-fn select_g_idx_pair(groups: &Vec<Vec<usize>>, rank: &Vec<usize>, input: &Input) -> (usize, usize) {
-    let mut heavier_g_idx;
-    let mut lighter_g_idx;
-    loop {
-        let par = 1 + (time::elapsed_seconds() * 5.0 / (TIME_LIMIT - 0.1)).round() as usize;
-        lighter_g_idx = rnd::gen_range(0, par.min(input.d / 2));
-        heavier_g_idx = rnd::gen_range((input.d - input.d.min(par)).max(input.d / 2), input.d);
-
-        if groups[rank[heavier_g_idx]].len() > 1 {
-            break;
-        }
-    }
+fn select_g_idx_pair(input: &Input) -> (usize, usize) {
+    let par = 1 + (time::elapsed_seconds() * 5.0 / (TIME_LIMIT - 0.1)).round() as usize;
+    let lighter_g_idx = rnd::gen_range(0, par.min(input.d / 2));
+    let heavier_g_idx = rnd::gen_range((input.d - input.d.min(par)).max(input.d / 2), input.d);
     (lighter_g_idx, heavier_g_idx)
 }
 
@@ -299,7 +291,7 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     while interactor.query_count < input.q && time::elapsed_seconds() < TIME_LIMIT - 0.2 {
         // TODO: ロールバックの高速化
         let copied_groups = groups.clone();
-        let (lighter_g_idx, heavier_g_idx) = select_g_idx_pair(&groups, &rank, input);
+        let (lighter_g_idx, heavier_g_idx) = select_g_idx_pair(input);
 
         let p = rnd::nextf();
         let action = if p < 0.5 {
