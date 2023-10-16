@@ -23,20 +23,17 @@ pub enum BalanceResult {
 }
 
 pub struct Balancer {
-    hash_for_item: Vec<u128>,
     left_edges: HashMap<u128, Vec<u128>>,  // first <= second
     right_edges: HashMap<u128, Vec<u128>>, // first > second
 }
 
 impl Balancer {
     pub fn new(input: &Input) -> Balancer {
-        let mut hash_for_item = vec![0; input.n];
         // NOTE: なぜか残すと乱数が強くなる、、、関係ないと思うが、一旦放置
-        for i in 0..input.n {
-            hash_for_item[i] = rnd::gen_range(0, usize::MAX) as u128;
-        }
+        // for i in 0..input.n {
+        //     rnd::gen_range(0, usize::MAX) as u128;
+        // }
         Balancer {
-            hash_for_item,
             left_edges: HashMap::new(),
             right_edges: HashMap::new(),
         }

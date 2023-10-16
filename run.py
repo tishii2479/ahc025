@@ -10,7 +10,7 @@ from typing import List, Optional
 import pandas as pd
 from joblib import Parallel, delayed
 
-TIME_LIMIT = 10.0
+TIME_LIMIT = 21.0
 
 
 def setup_logger() -> logging.Logger:
