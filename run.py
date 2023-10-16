@@ -209,7 +209,7 @@ def evaluate_relative_score(
 def list_solvers(database_csv: str) -> None:
     database_df = pd.read_csv(database_csv)
     logger.info(
-        database_df.groupby("solver_version")["score"].agg("mean").sort_values()
+        database_df.groupby("solver_version")["score"].agg("mean").sort_values()[:50]
     )
 
 

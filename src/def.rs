@@ -42,6 +42,11 @@ impl Balancer {
         }
     }
 
+    ///
+    /// 1. 部分集合が存在するかチェックし、存在するなら辺を引く
+    /// 2. 差分が1個の集合が存在するかチェックし、存在し、かつ差分の大小関係がわかっているものに対して辺を引く
+    /// 3. 元の位置から探索を開始する
+    ///
     pub fn get_result(
         &mut self,
         left_v: &Vec<usize>,
@@ -54,18 +59,11 @@ impl Balancer {
         }
         assert!(left_v.len() > 0 && right_v.len() > 0);
 
-        fn add_edge(edges: &mut HashMap<u128, Vec<u128>>, first_hash: u128, second_hash: u128) {
-            if let Some(current_edges) = edges.get_mut(&first_hash) {
-                if !current_edges.contains(&second_hash) {
-                    current_edges.push(second_hash);
-                }
-            } else {
-                edges.insert(first_hash, vec![second_hash]);
-            }
-        }
-
         let left_hash = self.to_hash(left_v);
         let right_hash = self.to_hash(right_v);
+
+        self.add_additional_edges(left_hash);
+        self.add_additional_edges(right_hash);
 
         let search_result = self.search_result(left_v, right_v);
         match search_result {
@@ -133,6 +131,48 @@ impl Balancer {
         BalanceResult::Unknown
     }
 
+    ///
+    /// 1. 部分集合が存在するかチェックし、存在するなら辺を引く
+    /// 2. 差分が1個の集合が存在するかチェックし、存在し、かつ差分の大小関係がわかっているものに対して辺を引く
+    ///
+    fn add_additional_edges(&mut self, v_hash: u128) {
+        let mut additional_edges = vec![]; // first < second
+        if !self.left_edges.contains_key(&v_hash) {
+            for (u_hash, _) in self.left_edges.iter() {
+                // 部分集合のチェック
+                if (v_hash & *u_hash) == *u_hash {
+                    additional_edges.push((*u_hash, v_hash));
+                    continue;
+                }
+                if (v_hash & *u_hash) == v_hash {
+                    additional_edges.push((v_hash, *u_hash));
+                    continue;
+                }
+
+                // 差分が1個のものをチェック
+            }
+        }
+        if !self.right_edges.contains_key(&v_hash) {
+            for (u_hash, _) in self.right_edges.iter() {
+                // 部分集合のチェック
+                if (v_hash & *u_hash) == *u_hash {
+                    additional_edges.push((*u_hash, v_hash));
+                }
+                if (v_hash & *u_hash) == v_hash {
+                    additional_edges.push((v_hash, *u_hash));
+                }
+
+                // 差分が1個のものをチェック
+            }
+        }
+
+        // NOTE: add_edgeで重複は考慮されるので、ここで取り除く必要はない
+        for (left_hash, right_hash) in additional_edges {
+            add_edge(&mut self.left_edges, left_hash, right_hash);
+            add_edge(&mut self.right_edges, right_hash, left_hash);
+        }
+    }
+
     fn check_empty_comparison(&self, left_v: &Vec<usize>, right_v: &Vec<usize>) -> BalanceResult {
         if left_v.len() == 0 && right_v.len() > 0 {
             return BalanceResult::Left;
@@ -150,6 +190,16 @@ impl Balancer {
             hash |= 1 << *e;
         }
         hash
+    }
+}
+
+fn add_edge(edges: &mut HashMap<u128, Vec<u128>>, first_hash: u128, second_hash: u128) {
+    if let Some(current_edges) = edges.get_mut(&first_hash) {
+        if !current_edges.contains(&second_hash) {
+            current_edges.push(second_hash);
+        }
+    } else {
+        edges.insert(first_hash, vec![second_hash]);
     }
 }
 
