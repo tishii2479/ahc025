@@ -265,8 +265,22 @@ fn action_swap2(
 
 fn select_g_idx_pair(input: &Input) -> (usize, usize) {
     let par = 1 + (time::elapsed_seconds() * 5.0 / (TIME_LIMIT - 0.1)).round() as usize;
-    let lighter_g_idx = rnd::gen_range(0, par.min(input.d / 2));
-    let heavier_g_idx = rnd::gen_range((input.d - input.d.min(par)).max(input.d / 2), input.d);
+    let mut lighter_g_idx = 0;
+    let mut heavier_g_idx = input.d - 1;
+    for i in 0..par.min(input.d / 2) {
+        if rnd::nextf() < 0.5 {
+            lighter_g_idx = i;
+            break;
+        }
+    }
+    for i in ((input.d - input.d.min(par)).max(input.d / 2)..input.d).rev() {
+        if rnd::nextf() < 0.5 {
+            heavier_g_idx = i;
+            break;
+        }
+    }
+    // lighter_g_idx = rnd::gen_range(0, par.min(input.d / 2));
+    // heavier_g_idx = rnd::gen_range((input.d - input.d.min(par)).max(input.d / 2), input.d);
     (lighter_g_idx, heavier_g_idx)
 }
 
