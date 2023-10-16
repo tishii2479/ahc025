@@ -21,12 +21,12 @@ pub enum BalanceResult {
 }
 
 pub struct Balancer {
-    pub left_edges: rustc_hash::FxHashMap<u128, Vec<u128>>, // first <= second
-    pub right_edges: rustc_hash::FxHashMap<u128, Vec<u128>>, // first > second
+    left_edges: rustc_hash::FxHashMap<u128, Vec<u128>>, // first <= second
+    right_edges: rustc_hash::FxHashMap<u128, Vec<u128>>, // first > second
 }
 
 impl Balancer {
-    pub fn new(input: &Input) -> Balancer {
+    pub fn new() -> Balancer {
         // NOTE: なぜか残すと乱数が強くなる、、、関係ないと思うが、一旦放置
         // for _ in 0..input.n {
         //     rnd::gen_range(0, usize::MAX) as u128;

@@ -26,13 +26,6 @@ pub mod rnd {
         assert!(low < high);
         (next() % (high - low)) + low
     }
-
-    pub fn shuffle<I>(vec: &mut Vec<I>) {
-        for i in 0..vec.len() {
-            let j = gen_range(0, vec.len());
-            vec.swap(i, j);
-        }
-    }
 }
 
 pub mod time {
@@ -55,27 +48,3 @@ pub mod time {
         }
     }
 }
-
-#[derive(Default)]
-pub struct NopHasher {
-    hash: u128,
-}
-
-impl Hasher for NopHasher {
-    fn write(&mut self, _: &[u8]) {
-        panic!();
-    }
-
-    #[inline]
-    fn write_u128(&mut self, n: u128) {
-        self.hash = n;
-    }
-
-    #[inline]
-    fn finish(&self) -> u64 {
-        panic!();
-    }
-}
-
-pub type NopHashMap<K, V> = HashMap<K, V, BuildHasherDefault<NopHasher>>;
-pub type NopHashSet<V> = HashSet<V, BuildHasherDefault<NopHasher>>;

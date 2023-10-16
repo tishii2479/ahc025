@@ -271,7 +271,7 @@ fn select_g_idx_pair(input: &Input) -> (usize, usize) {
 }
 
 fn solve(input: &Input, interactor: &mut Interactor) {
-    let mut balancer = Balancer::new(input);
+    let mut balancer = Balancer::new();
 
     // ランダムにグループに割り振る
     let mut groups = vec![vec![]; input.d];
@@ -339,9 +339,6 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     eprintln!("move_adopted_count:  {move_adopted_count}");
     eprintln!("swap_adopted_count:  {swap_adopted_count}");
     eprintln!("swap2_adopted_count: {swap2_adopted_count}");
-
-    // dbg!(&balancer.left_edges, &balancer.right_edges);
-    // dbg!(&balancer.left_edges.len(), &balancer.right_edges.len());
 
     let d = groups_to_output_d(&groups, input);
     interactor.output_d(&d, false);
