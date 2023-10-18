@@ -27,10 +27,6 @@ pub struct Balancer {
 
 impl Balancer {
     pub fn new() -> Balancer {
-        // NOTE: なぜか残すと乱数が強くなる、、、関係ないと思うが、一旦放置
-        // for _ in 0..input.n {
-        //     rnd::gen_range(0, usize::MAX) as u128;
-        // }
         Balancer {
             left_edges: rustc_hash::FxHashMap::default(),
             right_edges: rustc_hash::FxHashMap::default(),
@@ -98,8 +94,6 @@ impl Balancer {
             from_hash: u128,
             to_hash: u128,
         ) -> bool {
-            // static mut duration: f64 = 0.;
-            // let start = time::elapsed_seconds();
             // TODO: 再確保が起こらないようにする
             // let mut q = Queue::default();
             let mut q = VecDeque::new();
@@ -132,6 +126,37 @@ impl Balancer {
             return BalanceResult::Right;
         }
         BalanceResult::Unknown
+    }
+
+    pub fn find_lighter_in_group(&self, v: usize, groups: &Vec<usize>) -> usize {
+        let mut q = vec![];
+        let mut seen = rustc_hash::FxHashSet::default();
+        let group_hash = self.to_hash(groups);
+        let v_hash = 1 << v;
+        q.push((v_hash, 0));
+        seen.insert(v_hash);
+
+        let mut lightest_v = v_hash;
+        let mut lightest_depth = 0;
+
+        while let Some((v, depth)) = q.pop() {
+            if let Some(edges) = self.right_edges.get(&v) {
+                for u in edges {
+                    if seen.contains(u) {
+                        continue;
+                    }
+                    if u.count_ones() == 1 && (u & group_hash) > 0 && depth > lightest_depth {
+                        lightest_depth = depth;
+                        lightest_v = *u;
+                    }
+                    q.push((*u, depth + 1));
+                    seen.insert(*u);
+                }
+            }
+        }
+
+        assert_eq!(lightest_v.count_ones(), 1);
+        lightest_v.trailing_zeros() as usize
     }
 
     ///
@@ -198,9 +223,13 @@ impl Balancer {
     fn to_hash(&self, v: &Vec<usize>) -> u128 {
         let mut hash = 0;
         for e in v.iter() {
-            hash |= 1 << *e;
+            hash |= self.hash(*e);
         }
         hash
+    }
+
+    fn hash(&self, v: usize) -> u128 {
+        1 << v
     }
 }
 

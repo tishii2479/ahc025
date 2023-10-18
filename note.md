@@ -333,3 +333,5 @@ if rank.len() == rank_correct.len() {
 
 - `a<b<c`の関係にあるなら、aとcを試すよりaとbを試した方が成功率は高い
 - `a<b<c<d`と`a<e<f`があるなら、bの方がeより小さそう
+
+- 1/n
