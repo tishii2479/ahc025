@@ -1,6 +1,6 @@
-use std::collections::VecDeque;
-
 pub const TIME_LIMIT: f64 = 1.9;
+
+use std::collections::VecDeque;
 
 use crate::interactor::*;
 use crate::util::*;
@@ -101,6 +101,7 @@ impl Balancer {
             // static mut duration: f64 = 0.;
             // let start = time::elapsed_seconds();
             // TODO: 再確保が起こらないようにする
+            // let mut q = Queue::default();
             let mut q = VecDeque::new();
             let mut seen = rustc_hash::FxHashSet::default();
             q.push_back((from_hash, 0));

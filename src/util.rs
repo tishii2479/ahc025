@@ -48,3 +48,27 @@ pub mod time {
         }
     }
 }
+
+#[derive(Default)]
+pub struct Queue {
+    st_in: Vec<(u128, u16)>,
+    st_out: Vec<(u128, u16)>,
+}
+
+impl Queue {
+    pub fn push_back(&mut self, v: (u128, u16)) {
+        self.st_in.push(v);
+    }
+
+    pub fn pop_front(&mut self) -> Option<(u128, u16)> {
+        if self.st_out.is_empty() {
+            if self.st_in.is_empty() {
+                return None;
+            }
+            while let Some(v) = self.st_in.pop() {
+                self.st_out.push(v);
+            }
+        }
+        self.st_out.pop()
+    }
+}
