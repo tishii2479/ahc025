@@ -1,5 +1,7 @@
 #![allow(unused)]
 
+use rustc_hash::{FxHashMap, FxHashSet};
+
 pub mod rnd {
     static mut S: usize = 88172645463325252;
 
@@ -68,3 +70,6 @@ impl Queue {
         self.st_out.pop()
     }
 }
+
+pub type FastHashMap<K, V> = FxHashMap<K, V>;
+pub type FastHashSet<V> = FxHashSet<V>;

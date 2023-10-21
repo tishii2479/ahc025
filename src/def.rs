@@ -19,15 +19,15 @@ pub enum BalanceResult {
 }
 
 pub struct Balancer {
-    left_edges: rustc_hash::FxHashMap<u128, Vec<u128>>, // first <= second
-    right_edges: rustc_hash::FxHashMap<u128, Vec<u128>>, // first > second
+    left_edges: FastHashMap<u128, Vec<u128>>,  // first <= second
+    right_edges: FastHashMap<u128, Vec<u128>>, // first > second
 }
 
 impl Balancer {
     pub fn new() -> Balancer {
         Balancer {
-            left_edges: rustc_hash::FxHashMap::default(),
-            right_edges: rustc_hash::FxHashMap::default(),
+            left_edges: FastHashMap::default(),
+            right_edges: FastHashMap::default(),
         }
     }
 
@@ -89,30 +89,29 @@ impl Balancer {
         const MAX_DEPTH: u16 = 5;
 
         fn is_reachable(
-            edges: &rustc_hash::FxHashMap<u128, Vec<u128>>,
+            edges: &FastHashMap<u128, Vec<u128>>,
             from_hash: u128,
             to_hash: u128,
         ) -> bool {
             // TODO: 再確保が起こらないようにする
             let mut q = Queue::default();
-            let mut seen = rustc_hash::FxHashSet::default();
+            let mut seen = FastHashSet::default();
             q.push_back((from_hash, 0));
             seen.insert(from_hash);
             while let Some((v, depth)) = q.pop_front() {
-                if let Some(v_edges) = edges.get(&v) {
-                    for u in v_edges {
-                        if seen.contains(u) {
-                            continue;
-                        }
-                        if *u == to_hash {
-                            return true;
-                        }
-                        if depth >= MAX_DEPTH {
-                            continue;
-                        }
-                        seen.insert(*u);
-                        q.push_back((*u, depth + 1));
+                let Some(v_edges) = edges.get(&v) else { continue };
+                for u in v_edges {
+                    if seen.contains(u) {
+                        continue;
                     }
+                    if *u == to_hash {
+                        return true;
+                    }
+                    if depth >= MAX_DEPTH {
+                        continue;
+                    }
+                    seen.insert(*u);
+                    q.push_back((*u, depth + 1));
                 }
             }
             false
@@ -128,7 +127,7 @@ impl Balancer {
 
     pub fn find_lighter_in_group(&self, v: usize, groups: &Vec<usize>) -> usize {
         let mut q = vec![];
-        let mut seen = rustc_hash::FxHashSet::default();
+        let mut seen = FastHashSet::default();
         let group_hash = self.to_hash(groups);
         let v_hash = 1 << v;
         q.push((v_hash, 0));
@@ -138,18 +137,17 @@ impl Balancer {
         let mut lightest_depth = 0;
 
         while let Some((v, depth)) = q.pop() {
-            if let Some(edges) = self.right_edges.get(&v) {
-                for u in edges {
-                    if seen.contains(u) {
-                        continue;
-                    }
-                    if u.count_ones() == 1 && (u & group_hash) > 0 && depth > lightest_depth {
-                        lightest_depth = depth;
-                        lightest_v = *u;
-                    }
-                    q.push((*u, depth + 1));
-                    seen.insert(*u);
+            let Some(edges) = self.right_edges.get(&v) else { continue };
+            for u in edges {
+                if seen.contains(u) {
+                    continue;
                 }
+                if u.count_ones() == 1 && (u & group_hash) > 0 && depth > lightest_depth {
+                    lightest_depth = depth;
+                    lightest_v = *u;
+                }
+                q.push((*u, depth + 1));
+                seen.insert(*u);
             }
         }
 
@@ -235,11 +233,7 @@ impl Balancer {
     }
 }
 
-fn add_edge(
-    edges: &mut rustc_hash::FxHashMap<u128, Vec<u128>>,
-    first_hash: u128,
-    second_hash: u128,
-) {
+fn add_edge(edges: &mut FastHashMap<u128, Vec<u128>>, first_hash: u128, second_hash: u128) {
     if let Some(current_edges) = edges.get_mut(&first_hash) {
         if !current_edges.contains(&second_hash) {
             current_edges.push(second_hash);
