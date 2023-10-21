@@ -338,9 +338,9 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         trial_count += 1;
 
         let p = rnd::nextf();
-        let action = if p < 0.5 {
+        let action = if p < 0.5 && time::elapsed_seconds() < 1.0 {
             action_move
-        } else if p < 0.9 {
+        } else if p < 0.9 && time::elapsed_seconds() < 1.0 {
             action_swap
         } else {
             action_swap2
@@ -372,19 +372,19 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         interactor.output_d(&d, true);
     }
 
-    let mut edges_mean = 0.;
-    for (_, edges) in balancer.left_edges.iter() {
-        edges_mean += edges.len() as f64;
-    }
-    edges_mean /= balancer.left_edges.len() as f64;
-    eprintln!(
-        "{:?} {:?} {} {} {}",
-        balancer.left_edges,
-        balancer.right_edges,
-        balancer.left_edges.len(),
-        balancer.right_edges.len(),
-        edges_mean
-    );
+    // let mut edges_mean = 0.;
+    // for (_, edges) in balancer.left_edges.iter() {
+    //     edges_mean += edges.len() as f64;
+    // }
+    // edges_mean /= balancer.left_edges.len() as f64;
+    // eprintln!(
+    //     "{:?} {:?} {} {} {}",
+    //     balancer.left_edges,
+    //     balancer.right_edges,
+    //     balancer.left_edges.len(),
+    //     balancer.right_edges.len(),
+    //     edges_mean
+    // );
 
     // 必要ないクエリを消化する
     if interactor.query_count < input.q {

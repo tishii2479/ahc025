@@ -153,10 +153,6 @@ impl Balancer {
         lightest_v.trailing_zeros() as usize
     }
 
-    // pub fn find_least_heavier_in_group(&self, v: usize, groups: &Vec<usize>) {
-    // let mut v = vec![];
-    // }
-
     ///
     /// 1. 部分集合が存在するかチェックし、存在するなら辺を引く
     /// 2. 差分が1個の集合が存在するかチェックし、存在し、かつ差分の大小関係がわかっているものに対して辺を引く
