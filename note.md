@@ -369,7 +369,9 @@ if rank.len() == rank_correct.len() {
 
 - swap
     - n:nは難しそう
-    - なんでだろうねー
+        - なんでだろうねー
 - qが小さい時の対処
 - 高速化
+    - 探索の高速化
+    - `add_edges_with_search`
 - 細かい調整
