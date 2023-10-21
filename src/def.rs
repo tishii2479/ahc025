@@ -1,7 +1,5 @@
 pub const TIME_LIMIT: f64 = 1.9;
 
-use std::collections::VecDeque;
-
 use crate::interactor::*;
 use crate::util::*;
 
@@ -95,10 +93,10 @@ impl Balancer {
             to_hash: u128,
         ) -> bool {
             // TODO: 再確保が起こらないようにする
-            // let mut q = Queue::default();
             let mut q = Queue::default();
             let mut seen = rustc_hash::FxHashSet::default();
             q.push_back((from_hash, 0));
+            seen.clear();
             seen.insert(from_hash);
             while let Some((v, depth)) = q.pop_front() {
                 if let Some(v_edges) = edges.get(&v) {
@@ -158,9 +156,9 @@ impl Balancer {
         lightest_v.trailing_zeros() as usize
     }
 
-    pub fn find_least_heavier_in_group(&self, v: usize, groups: &Vec<usize>) {
-        // let mut v = vec![];
-    }
+    // pub fn find_least_heavier_in_group(&self, v: usize, groups: &Vec<usize>) {
+    // let mut v = vec![];
+    // }
 
     ///
     /// 1. 部分集合が存在するかチェックし、存在するなら辺を引く

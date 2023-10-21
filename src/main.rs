@@ -31,7 +31,10 @@ fn action_move(
         &groups[rank[heavier_g_idx]],
         interactor,
     ) {
-        BalanceResult::Right | BalanceResult::Equal => return false,
+        BalanceResult::Right | BalanceResult::Equal => {
+            groups[rank[heavier_g_idx]].push(item_idx);
+            return false;
+        }
         _ => {}
     }
 
@@ -45,6 +48,8 @@ fn action_move(
         interactor,
         balancer,
     ) {
+        // 計測できなかった場合はとりあえず元に戻す
+        groups[rank[heavier_g_idx]].push(item_idx);
         return false;
     }
     groups[rank[lighter_g_idx]].push(item_idx);
@@ -58,6 +63,7 @@ fn action_move(
         interactor,
         balancer,
     ) {
+        groups[rank[heavier_g_idx]].push(item_idx);
         return false;
     }
 
@@ -109,6 +115,7 @@ fn action_swap(
                 interactor,
                 balancer,
             ) {
+                groups[rank[lighter_g_idx]].push(item_idx_b);
                 return false;
             }
             groups[rank[lighter_g_idx]].push(item_idx_b);
@@ -243,6 +250,9 @@ fn action_swap2(
                 interactor,
                 balancer,
             ) {
+                for item_idx_b in item_indices_b.iter() {
+                    groups[rank[lighter_g_idx]].push(*item_idx_b);
+                }
                 return false;
             }
             for item_idx_b in item_indices_b.iter() {
@@ -341,7 +351,7 @@ fn solve(input: &Input, interactor: &mut Interactor) {
                 eprintln!("[{} / {}] adopt swap2", interactor.query_count, input.q);
             }
         } else {
-            groups = copied_groups;
+            // groups = copied_groups;
         }
 
         let d = groups_to_output_d(&groups, input);
