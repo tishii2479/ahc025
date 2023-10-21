@@ -327,7 +327,6 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     let mut swap2_adopted_count = 0;
 
     while interactor.query_count < input.q && time::elapsed_seconds() < TIME_LIMIT - 0.1 {
-        let mut copied_groups = groups.clone();
         let (lighter_g_idx, heavier_g_idx) = select_g_idx_pair(input);
         trial_count += 1;
 
@@ -360,26 +359,6 @@ fn solve(input: &Input, interactor: &mut Interactor) {
                 swap2_adopted_count += 1;
                 eprintln!("[{} / {}] adopt swap2", interactor.query_count, input.q);
             }
-        } else {
-            // for i in 0..groups.len() {
-            //     groups[i].sort();
-            // }
-            // for i in 0..copied_groups.len() {
-            //     copied_groups[i].sort();
-            // }
-            // assert_eq!(
-            //     groups,
-            //     copied_groups,
-            //     "p: {} {} {} {:?} {:?} {:?} {:?}",
-            //     p,
-            //     rank[lighter_g_idx],
-            //     rank[heavier_g_idx],
-            //     groups[rank[lighter_g_idx]],
-            //     groups[rank[heavier_g_idx]],
-            //     copied_groups[rank[lighter_g_idx]],
-            //     copied_groups[rank[heavier_g_idx]],
-            // );
-            // groups = copied_groups;
         }
 
         let d = groups_to_output_d(&groups, input);
