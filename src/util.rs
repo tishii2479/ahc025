@@ -1,9 +1,5 @@
 #![allow(unused)]
 
-use core::hash::BuildHasherDefault;
-use core::hash::Hasher;
-use std::collections::{HashMap, HashSet};
-
 pub mod rnd {
     static mut S: usize = 88172645463325252;
 

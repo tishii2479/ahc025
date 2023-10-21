@@ -96,7 +96,6 @@ impl Balancer {
             let mut q = Queue::default();
             let mut seen = rustc_hash::FxHashSet::default();
             q.push_back((from_hash, 0));
-            seen.clear();
             seen.insert(from_hash);
             while let Some((v, depth)) = q.pop_front() {
                 if let Some(v_edges) = edges.get(&v) {
