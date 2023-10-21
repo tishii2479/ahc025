@@ -16,4 +16,6 @@ if __name__ == "__main__":
     subprocess.run(f"pbcopy < tools/out/{file}.txt", shell=True)
 
     df = pd.read_csv("./log/database.csv")
-    print(df[(df.solver_version == "tag1") & (df.input_file == f"tools/in/{file}.txt")])
+    print(
+        df[(df.solver_version == "sub10") & (df.input_file == f"tools/in/{file}.txt")]
+    )

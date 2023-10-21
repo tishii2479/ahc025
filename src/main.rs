@@ -218,14 +218,14 @@ fn action_swap2(
             .iter()
             .position(|e| e == item_idx_a)
             .unwrap();
-        groups[rank[lighter_g_idx]].swap_remove(i);
+        groups[rank[lighter_g_idx]].remove(i);
     }
     for item_idx_b in item_indices_b.iter() {
         let i = groups[rank[heavier_g_idx]]
             .iter()
             .position(|e| e == item_idx_b)
             .unwrap();
-        groups[rank[heavier_g_idx]].swap_remove(i);
+        groups[rank[heavier_g_idx]].remove(i);
     }
 
     match balancer.get_result(
