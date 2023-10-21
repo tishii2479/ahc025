@@ -200,7 +200,8 @@ def evaluate_relative_score(
     if columns is not None:
         assert 1 <= len(columns) <= 2
         if len(columns) == 1:
-            score_df["q_group"] = score_df["q"] // 300 * 300
+            # score_df["q_group"] = score_df["q"] // 300 * 300
+            score_df["q_group"] = score_df["d"]
             score_df["compare_result_win"] = score_df.relative_score < 1.0
             score_df["compare_result_lose"] = score_df.relative_score > 1.0
             logger.info(

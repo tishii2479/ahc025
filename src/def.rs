@@ -315,8 +315,8 @@ pub fn update_rank(
     interactor: &mut Interactor,
     balancer: &mut Balancer,
 ) -> bool {
-    // :param
-    if input.d < 10 {
+    const PAR: usize = 8; // :param
+    if input.d < PAR {
         update_rank_linear_search(
             rank,
             groups,
