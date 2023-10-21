@@ -85,10 +85,8 @@ fn action_swap(
     balancer: &mut Balancer,
     interactor: &mut Interactor,
 ) -> bool {
-    let item_idx_in_group_a = rnd::gen_range(0, groups[rank[lighter_g_idx]].len());
-    let item_idx_in_group_b = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
-    let item_idx_a = groups[rank[lighter_g_idx]][item_idx_in_group_a];
-    let item_idx_b = groups[rank[heavier_g_idx]][item_idx_in_group_b];
+    let item_idx_a = select_lighter_item(&groups[rank[lighter_g_idx]], balancer);
+    let item_idx_b = select_lighter_item(&groups[rank[heavier_g_idx]], balancer);
 
     // 入れ替えようとしているアイテムの大小関係が集合の大小関係と一致しなければ不採用
     match balancer.get_result(&vec![item_idx_a], &vec![item_idx_b], interactor) {
@@ -96,8 +94,16 @@ fn action_swap(
         _ => return false,
     }
 
-    groups[rank[lighter_g_idx]].swap_remove(item_idx_in_group_a);
-    groups[rank[heavier_g_idx]].swap_remove(item_idx_in_group_b);
+    let i = groups[rank[lighter_g_idx]]
+        .iter()
+        .position(|x| *x == item_idx_a)
+        .unwrap();
+    groups[rank[lighter_g_idx]].swap_remove(i);
+    let i = groups[rank[heavier_g_idx]]
+        .iter()
+        .position(|x| *x == item_idx_b)
+        .unwrap();
+    groups[rank[heavier_g_idx]].swap_remove(i);
     match balancer.get_result(
         &groups[rank[lighter_g_idx]],
         &groups[rank[heavier_g_idx]],
@@ -166,10 +172,10 @@ fn action_swap2(
     interactor: &mut Interactor,
 ) -> bool {
     const TRIAL_COUNT: usize = 3;
-    let a1 = rnd::gen_range(0, groups[rank[lighter_g_idx]].len());
-    let b1 = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
-    let mut item_indices_a = vec![groups[rank[lighter_g_idx]][a1]];
-    let mut item_indices_b = vec![groups[rank[heavier_g_idx]][b1]];
+    let mut item_indices_a =
+        vec![groups[rank[lighter_g_idx]][rnd::gen_range(0, groups[rank[lighter_g_idx]].len())]];
+    let mut item_indices_b =
+        vec![groups[rank[heavier_g_idx]][rnd::gen_range(0, groups[rank[heavier_g_idx]].len())]];
 
     // 入れ替えようとしているアイテムの大小関係が集合の大小関係と一致しなければ不採用
     match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
