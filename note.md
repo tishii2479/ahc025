@@ -371,7 +371,8 @@ if rank.len() == rank_correct.len() {
     - n:nは難しそう
         - なんでだろうねー
 - qが小さい時の対処
+- `add_edges_with_search`の追求
+    - 高速化の後？
 - 高速化
     - 探索の高速化
-    - `add_edges_with_search`
 - 細かい調整
