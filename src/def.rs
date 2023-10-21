@@ -19,8 +19,8 @@ pub enum BalanceResult {
 }
 
 pub struct Balancer {
-    left_edges: FastHashMap<u128, Vec<u128>>,  // first <= second
-    right_edges: FastHashMap<u128, Vec<u128>>, // first > second
+    pub left_edges: FastHashMap<u128, Vec<u128>>, // first <= second
+    pub right_edges: FastHashMap<u128, Vec<u128>>, // first > second
 }
 
 impl Balancer {
@@ -93,7 +93,6 @@ impl Balancer {
             from_hash: u128,
             to_hash: u128,
         ) -> bool {
-            // TODO: 再確保が起こらないようにする
             let mut q = Queue::default();
             let mut seen = FastHashSet::default();
             q.push_back((from_hash, 0));

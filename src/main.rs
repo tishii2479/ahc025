@@ -297,7 +297,7 @@ fn action_swap2(
 fn select_g_idx_pair(input: &Input) -> (usize, usize) {
     const P: f64 = 0.3;
     let par =
-        1 + (time::elapsed_seconds() * input.d as f64 / 2. / (TIME_LIMIT - 0.1)).round() as usize;
+        1 + (time::elapsed_seconds() * input.d as f64 / 3. / (TIME_LIMIT - 0.1)).round() as usize;
     let mut lighter_g_idx = 0;
     let mut heavier_g_idx = input.d - 1;
     for i in 0..par.min(input.d / 2) {
@@ -372,7 +372,27 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         interactor.output_d(&d, true);
     }
 
+    let mut edges_mean = 0.;
+    for (_, edges) in balancer.left_edges.iter() {
+        edges_mean += edges.len() as f64;
+    }
+    edges_mean /= balancer.left_edges.len() as f64;
+    eprintln!(
+        "{:?} {:?} {} {} {}",
+        balancer.left_edges,
+        balancer.right_edges,
+        balancer.left_edges.len(),
+        balancer.right_edges.len(),
+        edges_mean
+    );
+
     // 必要ないクエリを消化する
+    if interactor.query_count < input.q {
+        eprintln!("------------------");
+        eprintln!("remaining query: {}", input.q - interactor.query_count);
+        eprintln!("------------------");
+    }
+
     while interactor.query_count < input.q {
         interactor.output_query(&vec![0], &vec![1]);
     }
