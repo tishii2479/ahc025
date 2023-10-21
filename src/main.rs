@@ -6,11 +6,11 @@ use crate::def::*;
 use crate::interactor::*;
 use crate::util::*;
 
-fn select_lighter_item(group: &Vec<usize>, balancer: &mut Balancer) -> (usize, usize) {
+fn select_lighter_item(group: &Vec<usize>, balancer: &mut Balancer) -> usize {
     let item_idx_in_group = rnd::gen_range(0, group.len());
     let item_idx = group[item_idx_in_group];
     let item_idx = balancer.find_lighter_in_group(item_idx, &group);
-    (group.iter().position(|x| *x == item_idx).unwrap(), item_idx)
+    item_idx
 }
 
 fn action_move(
@@ -22,8 +22,12 @@ fn action_move(
     balancer: &mut Balancer,
     interactor: &mut Interactor,
 ) -> bool {
-    let (item_idx_in_group, item_idx) = select_lighter_item(&groups[rank[heavier_g_idx]], balancer);
-    groups[rank[heavier_g_idx]].swap_remove(item_idx_in_group);
+    let item_idx = select_lighter_item(&groups[rank[heavier_g_idx]], balancer);
+    let i = groups[rank[heavier_g_idx]]
+        .iter()
+        .position(|x| *x == item_idx)
+        .unwrap();
+    groups[rank[heavier_g_idx]].swap_remove(i);
 
     // 集合の重さの差が改善しなければ不採用
     match balancer.get_result(
@@ -159,25 +163,21 @@ fn action_swap2(
     let b1 = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
     let mut item_indices_a = vec![groups[rank[lighter_g_idx]][a1]];
     let mut item_indices_b = vec![groups[rank[heavier_g_idx]][b1]];
-    let mut item_indices_in_a = vec![a1];
-    let mut item_indices_in_b = vec![b1];
 
     // 入れ替えようとしているアイテムの大小関係が集合の大小関係と一致しなければ不採用
     match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
         // 重い方に大小関係が入れ替わるものがあれば足す
         BalanceResult::Right => {
             for _ in 0..trial_count {
-                let (b2, _) = select_lighter_item(&groups[rank[heavier_g_idx]], balancer);
-                if item_indices_in_b.contains(&b2) {
+                let b2 = select_lighter_item(&groups[rank[heavier_g_idx]], balancer);
+                if item_indices_b.contains(&b2) {
                     continue;
                 }
-                item_indices_b.push(groups[rank[heavier_g_idx]][b2]);
-                item_indices_in_b.push(b2);
+                item_indices_b.push(b2);
                 match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
                     BalanceResult::Left | BalanceResult::Equal => break,
                     _ => {
                         item_indices_b.pop();
-                        item_indices_in_b.pop();
                     }
                 }
             }
@@ -185,17 +185,15 @@ fn action_swap2(
         BalanceResult::Left => {
             // 軽い方に足せるものがあれば足す
             for _ in 0..trial_count {
-                let (a2, _) = select_lighter_item(&groups[rank[lighter_g_idx]], balancer);
-                if item_indices_in_a.contains(&a2) {
+                let a2 = select_lighter_item(&groups[rank[lighter_g_idx]], balancer);
+                if item_indices_a.contains(&a2) {
                     continue;
                 }
-                item_indices_a.push(groups[rank[lighter_g_idx]][a2]);
-                item_indices_in_a.push(a2);
+                item_indices_a.push(a2);
                 match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
                     BalanceResult::Left | BalanceResult::Equal => continue,
                     _ => {
                         item_indices_a.pop();
-                        item_indices_in_a.pop();
                     }
                 }
             }
@@ -319,8 +317,6 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     let mut swap2_adopted_count = 0;
 
     while interactor.query_count < input.q && time::elapsed_seconds() < TIME_LIMIT - 0.2 {
-        // TODO: ロールバックの高速化
-        // let copied_groups = groups.clone();
         let (lighter_g_idx, heavier_g_idx) = select_g_idx_pair(input);
         trial_count += 1;
 

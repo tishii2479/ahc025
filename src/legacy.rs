@@ -109,38 +109,31 @@ fn action_swap3(
     // 入れ替えようとしているアイテムの大小関係が集合の大小関係と一致しなければ不採用
     match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
         // 重い方に大小関係が入れ替わるものがあれば足す
-        BalanceResult::Right => {
-            // 重い方から取り除く
-            for _ in 0..trial_count {
-                let (b2, _) = select_lighter_item(&groups[rank[heavier_g_idx]], balancer);
-                if item_indices_in_b.contains(&b2) {
-                    continue;
-                }
-                item_indices_b.push(groups[rank[heavier_g_idx]][b2]);
-                item_indices_in_b.push(b2);
-                match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
-                    BalanceResult::Left | BalanceResult::Equal => break,
-                    _ => {
-                        item_indices_b.pop();
-                        item_indices_in_b.pop();
-                    }
-                }
-            }
-        }
+        BalanceResult::Right => return false,
         BalanceResult::Left => {
             // 軽い方に足せるものがあれば足す
             for _ in 0..trial_count {
-                let (a2, _) = select_lighter_item(&groups[rank[lighter_g_idx]], balancer);
-                if item_indices_in_a.contains(&a2) {
-                    continue;
-                }
-                item_indices_a.push(groups[rank[lighter_g_idx]][a2]);
-                item_indices_in_a.push(a2);
-                match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
-                    BalanceResult::Left | BalanceResult::Equal => continue,
-                    _ => {
-                        item_indices_a.pop();
-                        item_indices_in_a.pop();
+                if rnd::nextf() < 0.5 || item_indices_b.len() == 1 {
+                    let a2 = select_lighter_item(&groups[rank[lighter_g_idx]], balancer);
+                    if item_indices_a.contains(&a2) {
+                        continue;
+                    }
+                    item_indices_a.push(a2);
+                    match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
+                        BalanceResult::Left | BalanceResult::Equal => continue,
+                        _ => {
+                            item_indices_a.pop();
+                        }
+                    }
+                } else {
+                    let b2 = select_lighter_item(&item_indices_b, balancer);
+                    item_indices_b
+                        .swap_remove(item_indices_b.iter().position(|x| *x == b2).unwrap());
+                    match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
+                        BalanceResult::Left | BalanceResult::Equal => continue,
+                        _ => {
+                            item_indices_b.push(b2);
+                        }
                     }
                 }
             }
@@ -218,15 +211,7 @@ fn action_swap3(
                 return false;
             }
             if item_indices_a.len() > 1 || item_indices_b.len() > 1 {
-                eprintln!(
-                    "swap2: {} {} {} {} {:?} {:?}",
-                    lighter_g_idx,
-                    heavier_g_idx,
-                    rank[lighter_g_idx],
-                    rank[heavier_g_idx],
-                    item_indices_a,
-                    item_indices_b
-                );
+                eprintln!("swap2: {:?} {:?}", item_indices_a, item_indices_b);
             }
             return true;
         }
