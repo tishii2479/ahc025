@@ -296,7 +296,8 @@ fn action_swap2(
 
 fn select_g_idx_pair(input: &Input) -> (usize, usize) {
     const P: f64 = 0.3;
-    let par = 1 + (time::elapsed_seconds() * 5.0 / (TIME_LIMIT - 0.1)).round() as usize;
+    let par =
+        1 + (time::elapsed_seconds() * input.d as f64 / 2. / (TIME_LIMIT - 0.1)).round() as usize;
     let mut lighter_g_idx = 0;
     let mut heavier_g_idx = input.d - 1;
     for i in 0..par.min(input.d / 2) {
