@@ -342,7 +342,16 @@ if rank.len() == rank_correct.len() {
     - VecDequeを止める
     - groupsのコピーをやめる
     - setを共有したい
+    - そこそこ効きそう
 - 経路探索の工夫
+    - 深さの調整
+    - ノード間に辺を作る
 - スワップの工夫
     - 選ぶアイテムの工夫
     - スタートを1:1でやる必要はない
+        - `n:m`で取って、減らす or 増やす
+- 深さは5くらいで十分そう
+    - tl=30、depth=20にしてもあまり変わらない
+    ```
+    python3 run.py -e -a sub9-faster-depth-20-tl-30 -b sub9-faster-depth-5
+    ```

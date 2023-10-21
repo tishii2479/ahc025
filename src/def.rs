@@ -86,6 +86,7 @@ impl Balancer {
 
     fn search_result(&self, left_hash: u128, right_hash: u128) -> BalanceResult {
         // NOTE: left = rightの時は稀（だと思う）ので、ここでは無視している
+        const MAX_DEPTH: u16 = 5;
 
         fn is_reachable(
             edges: &rustc_hash::FxHashMap<u128, Vec<u128>>,
@@ -106,7 +107,7 @@ impl Balancer {
                         if *u == to_hash {
                             return true;
                         }
-                        if depth >= 3 {
+                        if depth >= MAX_DEPTH {
                             continue;
                         }
                         seen.insert(*u);
