@@ -42,6 +42,7 @@ fn action_move(
         _ => {}
     }
 
+    let prev_g_idx = rank[heavier_g_idx];
     if !update_rank(
         rank,
         &groups,
@@ -53,8 +54,9 @@ fn action_move(
         balancer,
     ) {
         // 計測できなかった場合はとりあえず元に戻す
-        groups[rank[heavier_g_idx]].push(item_idx);
-        return false;
+        groups[prev_g_idx].push(item_idx);
+        // rankは更新できなかったが、moveは成功している
+        return true;
     }
     groups[rank[lighter_g_idx]].push(item_idx);
     if !update_rank(
@@ -67,9 +69,8 @@ fn action_move(
         interactor,
         balancer,
     ) {
-        // 計測できなかった場合はとりあえず元に戻す
-        groups[rank[heavier_g_idx]].push(item_idx);
-        return false;
+        // rankは更新できなかったが、moveは成功している
+        return true;
     }
 
     true
@@ -109,6 +110,7 @@ fn action_swap(
             return false;
         }
         _ => {
+            let to_idx = rank[lighter_g_idx];
             groups[rank[heavier_g_idx]].push(item_idx_a);
             if !update_rank(
                 rank,
@@ -120,8 +122,10 @@ fn action_swap(
                 interactor,
                 balancer,
             ) {
-                groups[rank[lighter_g_idx]].push(item_idx_b);
-                return false;
+                // 最後に更新できなかった場合、変更先に更新する
+                groups[to_idx].push(item_idx_b);
+                // rankは更新できなかったが、swapは成功している
+                return true;
             }
             groups[rank[lighter_g_idx]].push(item_idx_b);
             if !update_rank(
@@ -134,7 +138,8 @@ fn action_swap(
                 interactor,
                 balancer,
             ) {
-                return false;
+                // rankは更新できなかったが、swapは成功している
+                return true;
             }
             return true;
         }
@@ -152,7 +157,6 @@ fn action_swap(
 /// NOTE: trial_count = 0にすればaction_swapと一緒の挙動？
 ///
 fn action_swap2(
-    trial_count: usize,
     heavier_g_idx: usize,
     lighter_g_idx: usize,
     groups: &mut Vec<Vec<usize>>,
@@ -161,6 +165,7 @@ fn action_swap2(
     balancer: &mut Balancer,
     interactor: &mut Interactor,
 ) -> bool {
+    const TRIAL_COUNT: usize = 3;
     let a1 = rnd::gen_range(0, groups[rank[lighter_g_idx]].len());
     let b1 = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
     let mut item_indices_a = vec![groups[rank[lighter_g_idx]][a1]];
@@ -170,7 +175,7 @@ fn action_swap2(
     match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
         BalanceResult::Right => {
             // 重い方に大小関係が入れ替わるものがあれば足す
-            for _ in 0..trial_count {
+            for _ in 0..TRIAL_COUNT {
                 let b2 = select_lighter_item(&groups[rank[heavier_g_idx]], balancer);
                 if item_indices_b.contains(&b2) {
                     continue;
@@ -186,7 +191,7 @@ fn action_swap2(
         }
         BalanceResult::Left => {
             // 軽い方に足せるものがあれば足す
-            for _ in 0..trial_count {
+            for _ in 0..TRIAL_COUNT {
                 let a2 = select_lighter_item(&groups[rank[lighter_g_idx]], balancer);
                 if item_indices_a.contains(&a2) {
                     continue;
@@ -239,6 +244,7 @@ fn action_swap2(
             return false;
         }
         _ => {
+            let to_idx = rank[lighter_g_idx];
             for item_idx_a in item_indices_a.iter() {
                 groups[rank[heavier_g_idx]].push(*item_idx_a);
             }
@@ -253,9 +259,10 @@ fn action_swap2(
                 balancer,
             ) {
                 for item_idx_b in item_indices_b.iter() {
-                    groups[rank[lighter_g_idx]].push(*item_idx_b);
+                    groups[to_idx].push(*item_idx_b);
                 }
-                return false;
+                // rankは更新できなかったが、swapは成功している
+                return true;
             }
             for item_idx_b in item_indices_b.iter() {
                 groups[rank[lighter_g_idx]].push(*item_idx_b);
@@ -270,7 +277,8 @@ fn action_swap2(
                 interactor,
                 balancer,
             ) {
-                return false;
+                // rankは更新できなかったが、swapは成功している
+                return true;
             }
             if item_indices_a.len() > 1 || item_indices_b.len() > 1 {
                 eprintln!("swap2: {:?} {:?}", item_indices_a, item_indices_b);
@@ -319,52 +327,60 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     let mut swap2_adopted_count = 0;
 
     while interactor.query_count < input.q && time::elapsed_seconds() < TIME_LIMIT - 0.1 {
+        let mut copied_groups = groups.clone();
         let (lighter_g_idx, heavier_g_idx) = select_g_idx_pair(input);
         trial_count += 1;
 
         let p = rnd::nextf();
-        if p < 0.5 {
-            if action_move(
-                heavier_g_idx,
-                lighter_g_idx,
-                &mut groups,
-                &mut rank,
-                input,
-                &mut balancer,
-                interactor,
-            ) {
+        let action = if p < 0.5 {
+            action_move
+        } else if p < 0.9 {
+            action_swap
+        } else {
+            action_swap2
+        };
+
+        trial_count += 1;
+        if action(
+            heavier_g_idx,
+            lighter_g_idx,
+            &mut groups,
+            &mut rank,
+            input,
+            &mut balancer,
+            interactor,
+        ) {
+            if action == action_move {
                 move_adopted_count += 1;
                 eprintln!("[{} / {}] adopt move", interactor.query_count, input.q);
-            }
-        } else if p < 0.9 {
-            if action_swap(
-                heavier_g_idx,
-                lighter_g_idx,
-                &mut groups,
-                &mut rank,
-                input,
-                &mut balancer,
-                interactor,
-            ) {
+            } else if action == action_swap {
                 swap_adopted_count += 1;
                 eprintln!("[{} / {}] adopt swap", interactor.query_count, input.q);
-            }
-        } else {
-            const TRIAL_COUNT: usize = 3;
-            if action_swap2(
-                TRIAL_COUNT,
-                heavier_g_idx,
-                lighter_g_idx,
-                &mut groups,
-                &mut rank,
-                input,
-                &mut balancer,
-                interactor,
-            ) {
+            } else if action == action_swap2 {
                 swap2_adopted_count += 1;
                 eprintln!("[{} / {}] adopt swap2", interactor.query_count, input.q);
             }
-        };
+        } else {
+            // for i in 0..groups.len() {
+            //     groups[i].sort();
+            // }
+            // for i in 0..copied_groups.len() {
+            //     copied_groups[i].sort();
+            // }
+            // assert_eq!(
+            //     groups,
+            //     copied_groups,
+            //     "p: {} {} {} {:?} {:?} {:?} {:?}",
+            //     p,
+            //     rank[lighter_g_idx],
+            //     rank[heavier_g_idx],
+            //     groups[rank[lighter_g_idx]],
+            //     groups[rank[heavier_g_idx]],
+            //     copied_groups[rank[lighter_g_idx]],
+            //     copied_groups[rank[heavier_g_idx]],
+            // );
+            // groups = copied_groups;
+        }
 
         let d = groups_to_output_d(&groups, input);
         interactor.output_d(&d, true);
