@@ -316,7 +316,7 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     let mut swap_adopted_count = 0;
     let mut swap2_adopted_count = 0;
 
-    while interactor.query_count < input.q && time::elapsed_seconds() < TIME_LIMIT - 0.2 {
+    while interactor.query_count < input.q && time::elapsed_seconds() < TIME_LIMIT - 0.1 {
         let (lighter_g_idx, heavier_g_idx) = select_g_idx_pair(input);
         trial_count += 1;
 

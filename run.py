@@ -200,7 +200,16 @@ def evaluate_relative_score(
     if columns is not None:
         assert 1 <= len(columns) <= 2
         if len(columns) == 1:
-            logger.info(score_df.groupby(columns[0])["relative_score"].mean())
+            score_df["q_group"] = score_df["q"] // 300 * 300
+            score_df["compare_result_win"] = score_df.relative_score < 1.0
+            score_df["compare_result_lose"] = score_df.relative_score > 1.0
+            logger.info(
+                pd.merge(
+                    score_df.groupby("q_group")["compare_result_win"].mean(),
+                    score_df.groupby("q_group")["compare_result_lose"].mean(),
+                    on="q_group",
+                )
+            )
         elif len(columns) == 2:
             logger.info(
                 score_df[eval_items + columns].pivot_table(
@@ -245,6 +254,7 @@ if __name__ == "__main__":
                 args.solver_version,
                 args.benchmark_solver_version,
                 args.database_csv,
+                columns=["q"],
             )
     else:
         subprocess.run("cargo build --features local --release", shell=True)
@@ -265,4 +275,5 @@ if __name__ == "__main__":
                 args.solver_version,
                 args.benchmark_solver_version,
                 args.database_csv,
+                columns=["q"],
             )
