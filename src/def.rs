@@ -226,6 +226,23 @@ impl Balancer {
     fn hash(&self, v: usize) -> u128 {
         1 << v
     }
+
+    #[allow(unused)]
+    fn print_edges(&self) {
+        let mut edges_mean = 0.;
+        for (_, edges) in self.left_edges.iter() {
+            edges_mean += edges.len() as f64;
+        }
+        edges_mean /= self.left_edges.len() as f64;
+        eprintln!(
+            "{:?} {:?} {} {} {}",
+            self.left_edges,
+            self.right_edges,
+            self.left_edges.len(),
+            self.right_edges.len(),
+            edges_mean
+        );
+    }
 }
 
 fn add_edge(edges: &mut FastHashMap<u128, Vec<u128>>, first_hash: u128, second_hash: u128) {

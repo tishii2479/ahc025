@@ -86,25 +86,9 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         interactor.output_d(&d, true);
     }
 
-    // let mut edges_mean = 0.;
-    // for (_, edges) in balancer.left_edges.iter() {
-    //     edges_mean += edges.len() as f64;
-    // }
-    // edges_mean /= balancer.left_edges.len() as f64;
-    // eprintln!(
-    //     "{:?} {:?} {} {} {}",
-    //     balancer.left_edges,
-    //     balancer.right_edges,
-    //     balancer.left_edges.len(),
-    //     balancer.right_edges.len(),
-    //     edges_mean
-    // );
-
     // 必要ないクエリを消化する
     if interactor.query_count < input.q {
-        eprintln!("------------------");
-        eprintln!("remaining query: {}", input.q - interactor.query_count);
-        eprintln!("------------------");
+        eprintln!("remaining query:     {}", input.q - interactor.query_count);
     }
 
     while interactor.query_count < input.q {
