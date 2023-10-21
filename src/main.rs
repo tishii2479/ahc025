@@ -67,6 +67,7 @@ fn action_move(
         interactor,
         balancer,
     ) {
+        // 計測できなかった場合はとりあえず元に戻す
         groups[rank[heavier_g_idx]].push(item_idx);
         return false;
     }
@@ -148,6 +149,8 @@ fn action_swap(
 /// 4. a_1 < b_1の時
 ///     1. a_1 + a_2 < b_1となるようなa_2があればAから選択する
 ///
+/// NOTE: trial_count = 0にすればaction_swapと一緒の挙動？
+///
 fn action_swap2(
     trial_count: usize,
     heavier_g_idx: usize,
@@ -158,7 +161,6 @@ fn action_swap2(
     balancer: &mut Balancer,
     interactor: &mut Interactor,
 ) -> bool {
-    // NOTE: trial_count = 0にすればaction_swapと一緒の挙動？
     let a1 = rnd::gen_range(0, groups[rank[lighter_g_idx]].len());
     let b1 = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
     let mut item_indices_a = vec![groups[rank[lighter_g_idx]][a1]];
@@ -166,8 +168,8 @@ fn action_swap2(
 
     // 入れ替えようとしているアイテムの大小関係が集合の大小関係と一致しなければ不採用
     match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
-        // 重い方に大小関係が入れ替わるものがあれば足す
         BalanceResult::Right => {
+            // 重い方に大小関係が入れ替わるものがあれば足す
             for _ in 0..trial_count {
                 let b2 = select_lighter_item(&groups[rank[heavier_g_idx]], balancer);
                 if item_indices_b.contains(&b2) {
