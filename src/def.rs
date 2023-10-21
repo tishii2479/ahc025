@@ -96,7 +96,7 @@ impl Balancer {
         ) -> bool {
             // TODO: 再確保が起こらないようにする
             // let mut q = Queue::default();
-            let mut q = VecDeque::new();
+            let mut q = Queue::default();
             let mut seen = rustc_hash::FxHashSet::default();
             q.push_back((from_hash, 0));
             seen.insert(from_hash);
@@ -155,8 +155,11 @@ impl Balancer {
             }
         }
 
-        assert_eq!(lightest_v.count_ones(), 1);
         lightest_v.trailing_zeros() as usize
+    }
+
+    pub fn find_least_heavier_in_group(&self, v: usize, groups: &Vec<usize>) {
+        // let mut v = vec![];
     }
 
     ///
