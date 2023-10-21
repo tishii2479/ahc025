@@ -167,36 +167,37 @@ impl Balancer {
         let mut additional_edges = vec![]; // first < second
         let edge_data = [&self.left_edges, &self.right_edges];
         for edges in edge_data {
-            if !edges.contains_key(&v_hash) {
-                for (u_hash, _) in edges.iter() {
-                    // 部分集合のチェック
-                    if (v_hash & *u_hash) == *u_hash {
-                        additional_edges.push((*u_hash, v_hash));
-                        continue;
-                    }
-                    if (v_hash & *u_hash) == v_hash {
-                        additional_edges.push((v_hash, *u_hash));
-                        continue;
-                    }
+            if edges.contains_key(&v_hash) {
+                continue;
+            }
+            for (u_hash, _) in edges.iter() {
+                // 部分集合のチェック
+                if (v_hash & *u_hash) == *u_hash {
+                    additional_edges.push((*u_hash, v_hash));
+                    continue;
+                }
+                if (v_hash & *u_hash) == v_hash {
+                    additional_edges.push((v_hash, *u_hash));
+                    continue;
+                }
 
-                    // 差分が1個のものをチェック
-                    // 包含しているパターンは前まででチェックできている
-                    // v = 010111
-                    // u = 001111
-                    // v ^ u = 011000
-                    // a = v & u = 000111
-                    // v ^ a = 010000, u ^ a = 001000
-                    if (v_hash ^ *u_hash).count_ones() == 2 {
-                        let a = v_hash & *u_hash;
-                        match self.search_result(v_hash ^ a, *u_hash ^ a) {
-                            BalanceResult::Left | BalanceResult::Equal => {
-                                additional_edges.push((v_hash, *u_hash));
-                            }
-                            BalanceResult::Right => {
-                                additional_edges.push((*u_hash, v_hash));
-                            }
-                            _ => {}
+                // 差分が1個のものをチェック
+                // 包含しているパターンは前まででチェックできている
+                // v = 010111
+                // u = 001111
+                // v ^ u = 011000
+                // a = v & u = 000111
+                // v ^ a = 010000, u ^ a = 001000
+                if (v_hash ^ *u_hash).count_ones() == 2 {
+                    let a = v_hash & *u_hash;
+                    match self.search_result(v_hash ^ a, *u_hash ^ a) {
+                        BalanceResult::Left | BalanceResult::Equal => {
+                            additional_edges.push((v_hash, *u_hash));
                         }
+                        BalanceResult::Right => {
+                            additional_edges.push((*u_hash, v_hash));
+                        }
+                        _ => {}
                     }
                 }
             }
