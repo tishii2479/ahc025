@@ -6,18 +6,11 @@ use crate::def::*;
 use crate::interactor::*;
 use crate::util::*;
 
-fn select_lighter_item(
-    g_idx: usize,
-    groups: &mut Vec<Vec<usize>>,
-    balancer: &mut Balancer,
-) -> (usize, usize) {
-    let item_idx_in_group = rnd::gen_range(0, groups[g_idx].len());
-    let item_idx = groups[g_idx][item_idx_in_group];
-    let item_idx = balancer.find_lighter_in_group(item_idx, &groups[g_idx]);
-    (
-        groups[g_idx].iter().position(|x| *x == item_idx).unwrap(),
-        item_idx,
-    )
+fn select_lighter_item(group: &Vec<usize>, balancer: &mut Balancer) -> (usize, usize) {
+    let item_idx_in_group = rnd::gen_range(0, group.len());
+    let item_idx = group[item_idx_in_group];
+    let item_idx = balancer.find_lighter_in_group(item_idx, &group);
+    (group.iter().position(|x| *x == item_idx).unwrap(), item_idx)
 }
 
 fn action_move(
@@ -29,7 +22,7 @@ fn action_move(
     balancer: &mut Balancer,
     interactor: &mut Interactor,
 ) -> bool {
-    let (item_idx_in_group, item_idx) = select_lighter_item(rank[heavier_g_idx], groups, balancer);
+    let (item_idx_in_group, item_idx) = select_lighter_item(&groups[rank[heavier_g_idx]], balancer);
     groups[rank[heavier_g_idx]].swap_remove(item_idx_in_group);
 
     // 集合の重さの差が改善しなければ不採用
@@ -152,6 +145,7 @@ fn action_swap(
 ///     1. a_1 + a_2 < b_1となるようなa_2があればAから選択する
 ///
 fn action_swap2(
+    trial_count: usize,
     heavier_g_idx: usize,
     lighter_g_idx: usize,
     groups: &mut Vec<Vec<usize>>,
@@ -160,8 +154,7 @@ fn action_swap2(
     balancer: &mut Balancer,
     interactor: &mut Interactor,
 ) -> bool {
-    // NOTE: trial_count = 0にすればaction_swapと一緒の挙動
-    const TRIAL_COUNT: usize = 3;
+    // NOTE: trial_count = 0にすればaction_swapと一緒の挙動？
     let a1 = rnd::gen_range(0, groups[rank[lighter_g_idx]].len());
     let b1 = rnd::gen_range(0, groups[rank[heavier_g_idx]].len());
     let mut item_indices_a = vec![groups[rank[lighter_g_idx]][a1]];
@@ -173,8 +166,8 @@ fn action_swap2(
     match balancer.get_result(&item_indices_a, &item_indices_b, interactor) {
         // 重い方に大小関係が入れ替わるものがあれば足す
         BalanceResult::Right => {
-            for _ in 0..TRIAL_COUNT {
-                let (b2, _) = select_lighter_item(rank[heavier_g_idx], groups, balancer);
+            for _ in 0..trial_count {
+                let (b2, _) = select_lighter_item(&groups[rank[heavier_g_idx]], balancer);
                 if item_indices_in_b.contains(&b2) {
                     continue;
                 }
@@ -191,8 +184,8 @@ fn action_swap2(
         }
         BalanceResult::Left => {
             // 軽い方に足せるものがあれば足す
-            for _ in 0..TRIAL_COUNT {
-                let (a2, _) = select_lighter_item(rank[lighter_g_idx], groups, balancer);
+            for _ in 0..trial_count {
+                let (a2, _) = select_lighter_item(&groups[rank[lighter_g_idx]], balancer);
                 if item_indices_in_a.contains(&a2) {
                     continue;
                 }
@@ -329,40 +322,51 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         // TODO: ロールバックの高速化
         // let copied_groups = groups.clone();
         let (lighter_g_idx, heavier_g_idx) = select_g_idx_pair(input);
+        trial_count += 1;
 
         let p = rnd::nextf();
-        let action = if p < 0.5 {
-            action_move
-        } else if p < 0.9 {
-            action_swap
-        } else {
-            action_swap2
-        };
-
-        trial_count += 1;
-        if action(
-            heavier_g_idx,
-            lighter_g_idx,
-            &mut groups,
-            &mut rank,
-            input,
-            &mut balancer,
-            interactor,
-        ) {
-            if action == action_move {
+        if p < 0.5 {
+            if action_move(
+                heavier_g_idx,
+                lighter_g_idx,
+                &mut groups,
+                &mut rank,
+                input,
+                &mut balancer,
+                interactor,
+            ) {
                 move_adopted_count += 1;
                 eprintln!("[{} / {}] adopt move", interactor.query_count, input.q);
-            } else if action == action_swap {
+            }
+        } else if p < 0.9 {
+            if action_swap(
+                heavier_g_idx,
+                lighter_g_idx,
+                &mut groups,
+                &mut rank,
+                input,
+                &mut balancer,
+                interactor,
+            ) {
                 swap_adopted_count += 1;
                 eprintln!("[{} / {}] adopt swap", interactor.query_count, input.q);
-            } else if action == action_swap2 {
+            }
+        } else {
+            const TRIAL_COUNT: usize = 3;
+            if action_swap2(
+                TRIAL_COUNT,
+                heavier_g_idx,
+                lighter_g_idx,
+                &mut groups,
+                &mut rank,
+                input,
+                &mut balancer,
+                interactor,
+            ) {
                 swap2_adopted_count += 1;
                 eprintln!("[{} / {}] adopt swap2", interactor.query_count, input.q);
             }
-        } else {
-            // assert_eq!(copied_groups, groups);
-            // groups = copied_groups;
-        }
+        };
 
         let d = groups_to_output_d(&groups, input);
         interactor.output_d(&d, true);

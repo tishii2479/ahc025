@@ -342,10 +342,11 @@ if rank.len() == rank_correct.len() {
     - VecDequeを止める
     - groupsのコピーをやめる
     - setを共有したい
+    - 集合をbitで管理する
     - そこそこ効きそう
 - 経路探索の工夫
     - 深さの調整
-    - ノード間に辺を作る
+    - **ノード間に辺を作る**
 - スワップの工夫
     - 選ぶアイテムの工夫
     - スタートを1:1でやる必要はない
@@ -355,3 +356,7 @@ if rank.len() == rank_correct.len() {
     ```
     python3 run.py -e -a sub9-faster-depth-20-tl-30 -b sub9-faster-depth-5
     ```
+
+- 最後の調整
+    - パラメータ調整
+    - 集合の選び方
