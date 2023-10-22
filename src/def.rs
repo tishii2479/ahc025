@@ -194,14 +194,27 @@ impl Balancer {
                 // v ^ a = 010000, u ^ a = 001000
                 if (v_hash ^ *u_hash).count_ones() == 2 {
                     let a = v_hash & *u_hash;
-                    match self.search_result(v_hash ^ a, *u_hash ^ a) {
-                        BalanceResult::Left | BalanceResult::Equal => {
-                            additional_edges.push((v_hash, *u_hash));
+                    if let Some(cached_result) = self.cached_results.get(&(v_hash ^ a, *u_hash ^ a))
+                    {
+                        match cached_result {
+                            BalanceResult::Left | BalanceResult::Equal => {
+                                additional_edges.push((v_hash, *u_hash));
+                            }
+                            BalanceResult::Right => {
+                                additional_edges.push((*u_hash, v_hash));
+                            }
+                            _ => {}
                         }
-                        BalanceResult::Right => {
-                            additional_edges.push((*u_hash, v_hash));
+                    } else {
+                        match self.search_result(v_hash ^ a, *u_hash ^ a) {
+                            BalanceResult::Left | BalanceResult::Equal => {
+                                additional_edges.push((v_hash, *u_hash));
+                            }
+                            BalanceResult::Right => {
+                                additional_edges.push((*u_hash, v_hash));
+                            }
+                            _ => {}
                         }
-                        _ => {}
                     }
                 }
             }
