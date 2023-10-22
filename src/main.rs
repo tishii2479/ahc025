@@ -47,14 +47,18 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     let mut swap_adopted_count = 0;
     let mut swap2_adopted_count = 0;
 
+    let action_p = [[0.5, 0.9, 1.0], [0.1, 0.2, 1.0]];
+
     while interactor.query_count < input.q && time::elapsed_seconds() < TIME_LIMIT - 0.1 {
         let (lighter_g_idx, heavier_g_idx) = select_g_idx_pair(input);
         trial_count += 1;
 
+        let stage = time::elapsed_seconds() as usize;
+
         let p = rnd::nextf();
-        let action = if p < 0.5 && time::elapsed_seconds() < 1.0 {
+        let action = if p < action_p[stage][0] {
             action_move
-        } else if p < 0.9 && time::elapsed_seconds() < 1.0 {
+        } else if p < action_p[stage][1] {
             action_swap
         } else {
             action_swap2
