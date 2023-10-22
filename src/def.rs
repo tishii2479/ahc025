@@ -363,17 +363,23 @@ pub fn update_rank_linear_search(
     interactor: &mut Interactor,
     balancer: &mut Balancer,
 ) -> bool {
-    let order = if from_up {
-        (lighter_g_idx..heavier_g_idx).rev().collect::<Vec<usize>>()
+    if from_up {
+        for i in (lighter_g_idx..heavier_g_idx).rev() {
+            match balancer.get_result(&groups[rank[i]], &groups[rank[i + 1]], interactor) {
+                BalanceResult::Left => break,                // <
+                BalanceResult::Right => rank.swap(i, i + 1), // >
+                BalanceResult::Equal => break,               // =
+                BalanceResult::Unknown => return false,
+            }
+        }
     } else {
-        (lighter_g_idx..heavier_g_idx).collect::<Vec<usize>>()
-    };
-    for i in order {
-        match balancer.get_result(&groups[rank[i]], &groups[rank[i + 1]], interactor) {
-            BalanceResult::Left => break,                // <
-            BalanceResult::Right => rank.swap(i, i + 1), // >
-            BalanceResult::Equal => break,               // =
-            BalanceResult::Unknown => return false,
+        for i in lighter_g_idx..heavier_g_idx {
+            match balancer.get_result(&groups[rank[i]], &groups[rank[i + 1]], interactor) {
+                BalanceResult::Left => break,                // <
+                BalanceResult::Right => rank.swap(i, i + 1), // >
+                BalanceResult::Equal => break,               // =
+                BalanceResult::Unknown => return false,
+            }
         }
     }
     true
