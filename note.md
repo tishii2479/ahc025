@@ -519,3 +519,4 @@ group
 ```
 
 - lighter_in_groupをキャッシュしたい
+- search_resultもキャッシュしたい
