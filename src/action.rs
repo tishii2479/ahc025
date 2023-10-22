@@ -2,10 +2,10 @@ use crate::def::*;
 use crate::interactor::*;
 use crate::util::*;
 
-fn select_lighter_item(group: &mut Vec<usize>, balancer: &mut Balancer) -> usize {
+fn select_lighter_item(group: &Vec<usize>, balancer: &mut Balancer) -> usize {
     let item_idx_in_group = rnd::gen_range(0, group.len());
     let item_idx = group[item_idx_in_group];
-    let item_idx = balancer.find_lighter_in_group(item_idx, group);
+    let item_idx = balancer.find_lighter_in_group(item_idx, &group);
     item_idx
 }
 
@@ -18,7 +18,7 @@ pub fn action_move(
     balancer: &mut Balancer,
     interactor: &mut Interactor,
 ) -> bool {
-    let item_idx = select_lighter_item(&mut groups[rank[heavier_g_idx]], balancer);
+    let item_idx = select_lighter_item(&groups[rank[heavier_g_idx]], balancer);
     let i = groups[rank[heavier_g_idx]]
         .iter()
         .position(|x| *x == item_idx)
@@ -81,8 +81,8 @@ pub fn action_swap(
     balancer: &mut Balancer,
     interactor: &mut Interactor,
 ) -> bool {
-    let item_idx_a = select_lighter_item(&mut groups[rank[lighter_g_idx]], balancer);
-    let item_idx_b = select_lighter_item(&mut groups[rank[heavier_g_idx]], balancer);
+    let item_idx_a = select_lighter_item(&groups[rank[lighter_g_idx]], balancer);
+    let item_idx_b = select_lighter_item(&groups[rank[heavier_g_idx]], balancer);
 
     // 入れ替えようとしているアイテムの大小関係が集合の大小関係と一致しなければ不採用
     match balancer.get_result(&vec![item_idx_a], &vec![item_idx_b], interactor) {
@@ -178,7 +178,7 @@ pub fn action_swap2(
         BalanceResult::Right => {
             // 重い方に大小関係が入れ替わるものがあれば足す
             for _ in 0..TRIAL_COUNT {
-                let b2 = select_lighter_item(&mut groups[rank[heavier_g_idx]], balancer);
+                let b2 = select_lighter_item(&groups[rank[heavier_g_idx]], balancer);
                 if item_indices_b.contains(&b2) {
                     continue;
                 }
@@ -194,7 +194,7 @@ pub fn action_swap2(
         BalanceResult::Left => {
             // 軽い方に足せるものがあれば足す
             for _ in 0..TRIAL_COUNT {
-                let a2 = select_lighter_item(&mut groups[rank[lighter_g_idx]], balancer);
+                let a2 = select_lighter_item(&groups[rank[lighter_g_idx]], balancer);
                 if item_indices_a.contains(&a2) {
                     continue;
                 }

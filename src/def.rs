@@ -134,18 +134,33 @@ impl Balancer {
         BalanceResult::Unknown
     }
 
-    pub fn find_lighter_in_group(&self, v: usize, groups: &mut Vec<usize>) -> usize {
+    pub fn find_lighter_in_group(&self, v: usize, groups: &Vec<usize>) -> usize {
+        let mut q = vec![];
+        let mut seen = FastHashSet::default();
+        let group_hash = self.to_hash(groups);
         let v_hash = 1 << v;
-        if let Some(right_search_result) = self.right_cached_search_results.get(&v_hash) {
-            rnd::shuffle(groups);
-            for u in groups {
-                let u_hash = 1 << *u;
-                if right_search_result.contains(&u_hash) {
-                    return *u;
+        q.push((v_hash, 0));
+        seen.insert(v_hash);
+
+        let mut lightest_v = v_hash;
+        let mut lightest_depth = 0;
+
+        while let Some((v, depth)) = q.pop() {
+            let Some(edges) = self.right_edges.get(&v) else { continue };
+            for u in edges {
+                if seen.contains(u) {
+                    continue;
                 }
+                if u.count_ones() == 1 && (u & group_hash) > 0 && depth > lightest_depth {
+                    lightest_depth = depth;
+                    lightest_v = *u;
+                }
+                q.push((*u, depth + 1));
+                seen.insert(*u);
             }
         }
-        v
+
+        lightest_v.trailing_zeros() as usize
     }
 
     ///

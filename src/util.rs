@@ -24,13 +24,6 @@ pub mod rnd {
         assert!(low < high);
         (next() % (high - low)) + low
     }
-
-    pub fn shuffle<I>(vec: &mut Vec<I>) {
-        for i in 0..vec.len() {
-            let j = gen_range(0, vec.len());
-            vec.swap(i, j);
-        }
-    }
 }
 
 pub mod time {
