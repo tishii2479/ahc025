@@ -30,7 +30,7 @@ fn select_g_idx_pair(input: &Input) -> (usize, usize) {
 }
 
 fn solve(input: &Input, interactor: &mut Interactor) {
-    const STAGE_PAR: f64 = TIME_LIMIT / 2.;
+    const STAGE_PAR: f64 = 1.0;
     let mut balancer = Balancer::new();
 
     // ランダムにグループに割り振る
