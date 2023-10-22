@@ -30,7 +30,7 @@ fn select_g_idx_pair(input: &Input) -> (usize, usize) {
 }
 
 fn solve(input: &Input, interactor: &mut Interactor) {
-    const STAGE_PAR: f64 = 1.0;
+    const PAR: f64 = 1.0;
     let mut balancer = Balancer::new();
 
     // ランダムにグループに割り振る
@@ -53,11 +53,7 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     while interactor.query_count < input.q && time::elapsed_seconds() < TIME_LIMIT - 0.1 {
         trial_count += 1;
 
-        let stage = if time::elapsed_seconds() < STAGE_PAR {
-            0
-        } else {
-            1
-        };
+        let stage = if time::elapsed_seconds() < PAR { 0 } else { 1 };
 
         let (lighter_g_idx, heavier_g_idx) = select_g_idx_pair(input);
 
@@ -96,11 +92,11 @@ fn solve(input: &Input, interactor: &mut Interactor) {
         interactor.output_d(&d, true);
     }
 
-    // 必要ないクエリを消化する
     if interactor.query_count < input.q {
         eprintln!("remaining query:     {}", input.q - interactor.query_count);
     }
 
+    // 必要ないクエリを消化する
     while interactor.query_count < input.q {
         interactor.output_query(&vec![0], &vec![1]);
     }

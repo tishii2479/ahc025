@@ -54,7 +54,7 @@ impl Balancer {
         self.add_additional_edges(left_hash);
         self.add_additional_edges(right_hash);
 
-        let search_result: BalanceResult = self.search_result(left_hash, right_hash);
+        let search_result = self.search_result(left_hash, right_hash);
         match search_result {
             BalanceResult::Unknown => {}
             BalanceResult::Left | BalanceResult::Equal => {

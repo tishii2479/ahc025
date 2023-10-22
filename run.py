@@ -107,9 +107,10 @@ def run(
     tester_path = "./tools/target/release/tester"
     solver_cmd = f"{tester_path} {solver_path} {args}"
 
+    start_seed = 0
     cases = [
         (f"{data_dir}/in/{seed:04}.txt", f"{data_dir}/out/{seed:04}.txt")
-        for seed in range(case_num)
+        for seed in range(start_seed, start_seed + case_num)
     ]
     inputs = list(map(lambda x: Input(x[0]), cases))
     results = Parallel(n_jobs=-1, verbose=10)(
@@ -200,15 +201,15 @@ def evaluate_relative_score(
     if columns is not None:
         assert 1 <= len(columns) <= 2
         if len(columns) == 1:
-            # score_df["q_group"] = score_df["q"] // 300 * 300
-            score_df["q_group"] = score_df["d"] // 5 * 5
+            # score_df["group"] = score_df["q"] // 300 * 300
+            score_df["group"] = score_df["d"] // 3 * 3
             score_df["compare_result_win"] = score_df.relative_score < 1.0
             score_df["compare_result_lose"] = score_df.relative_score > 1.0
             logger.info(
                 pd.merge(
-                    score_df.groupby("q_group")["compare_result_win"].mean(),
-                    score_df.groupby("q_group")["compare_result_lose"].mean(),
-                    on="q_group",
+                    score_df.groupby("group")["compare_result_win"].mean(),
+                    score_df.groupby("group")["compare_result_lose"].mean(),
+                    on="group",
                 )
             )
         elif len(columns) == 2:
