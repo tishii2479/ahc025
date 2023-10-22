@@ -1,4 +1,4 @@
-pub const TIME_LIMIT: f64 = 1.9;
+pub const TIME_LIMIT: f64 = 2.0;
 
 use crate::interactor::*;
 use crate::util::*;
