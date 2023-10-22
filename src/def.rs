@@ -10,7 +10,7 @@ pub struct Input {
     pub q: usize,
 }
 
-#[derive(PartialEq, Eq, Debug)]
+#[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub enum BalanceResult {
     Left,    // <
     Right,   // >
@@ -21,6 +21,7 @@ pub enum BalanceResult {
 pub struct Balancer {
     pub left_edges: FastHashMap<u128, Vec<u128>>, // first <= second
     pub right_edges: FastHashMap<u128, Vec<u128>>, // first > second
+    pub cached_results: FastHashMap<(u128, u128), BalanceResult>,
 }
 
 impl Balancer {
@@ -28,6 +29,7 @@ impl Balancer {
         Balancer {
             left_edges: FastHashMap::default(),
             right_edges: FastHashMap::default(),
+            cached_results: FastHashMap::default(),
         }
     }
 
@@ -51,6 +53,10 @@ impl Balancer {
         let left_hash = self.to_hash(left_v);
         let right_hash = self.to_hash(right_v);
 
+        if let Some(cached_result) = self.cached_results.get(&(left_hash, right_hash)) {
+            return *cached_result;
+        }
+
         self.add_additional_edges(left_hash);
         self.add_additional_edges(right_hash);
 
@@ -58,13 +64,17 @@ impl Balancer {
         match search_result {
             BalanceResult::Unknown => {}
             BalanceResult::Left | BalanceResult::Equal => {
-                add_edge(&mut self.left_edges, left_hash, right_hash);
-                add_edge(&mut self.right_edges, right_hash, left_hash);
+                self.cached_results
+                    .insert((left_hash, right_hash), BalanceResult::Left);
+                self.cached_results
+                    .insert((right_hash, left_hash), BalanceResult::Right);
                 return search_result;
             }
             BalanceResult::Right => {
-                add_edge(&mut self.left_edges, right_hash, left_hash);
-                add_edge(&mut self.right_edges, left_hash, right_hash);
+                self.cached_results
+                    .insert((right_hash, left_hash), BalanceResult::Left);
+                self.cached_results
+                    .insert((left_hash, right_hash), BalanceResult::Right);
                 return search_result;
             }
         }
@@ -228,19 +238,18 @@ impl Balancer {
     }
 
     #[allow(unused)]
-    fn print_edges(&self) {
+    pub fn print_edges(&self) {
         let mut edges_mean = 0.;
         for (_, edges) in self.left_edges.iter() {
             edges_mean += edges.len() as f64;
         }
         edges_mean /= self.left_edges.len() as f64;
         eprintln!(
-            "{:?} {:?} {} {} {}",
-            self.left_edges,
-            self.right_edges,
+            "left_edges_node: {}, right_edges_node: {}, edges_per_node: {}, cached_result_size: {}",
             self.left_edges.len(),
             self.right_edges.len(),
-            edges_mean
+            edges_mean,
+            self.cached_results.len()
         );
     }
 }
