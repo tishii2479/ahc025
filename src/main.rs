@@ -47,9 +47,8 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     let mut move_adopted_count = 0;
     let mut swap_adopted_count = 0;
     let mut swap2_adopted_count = 0;
-    let mut swap3_adopted_count = 0;
 
-    let action_p = [[0.5, 0.9, 1.0, 1.0], [0.1, 0.2, 1.0, 1.0]];
+    let action_p = [[0.5, 0.9, 1.0], [0.1, 0.2, 1.0]];
 
     while interactor.query_count < input.q && time::elapsed_seconds() < TIME_LIMIT - 0.1 {
         trial_count += 1;
@@ -67,10 +66,8 @@ fn solve(input: &Input, interactor: &mut Interactor) {
             action_move
         } else if p < action_p[stage][1] {
             action_swap
-        } else if p < action_p[stage][2] {
-            action_swap2
         } else {
-            action_swap3
+            action_swap2
         };
 
         trial_count += 1;
@@ -92,9 +89,6 @@ fn solve(input: &Input, interactor: &mut Interactor) {
             } else if action == action_swap2 {
                 swap2_adopted_count += 1;
                 eprintln!("[{} / {}] adopt swap2", interactor.query_count, input.q);
-            } else if action == action_swap3 {
-                swap3_adopted_count += 1;
-                eprintln!("[{} / {}] adopt swap3", interactor.query_count, input.q);
             }
         }
 
@@ -115,7 +109,6 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     eprintln!("move_adopted_count:  {move_adopted_count}");
     eprintln!("swap_adopted_count:  {swap_adopted_count}");
     eprintln!("swap2_adopted_count: {swap2_adopted_count}");
-    eprintln!("swap3_adopted_count: {swap3_adopted_count}");
 
     let d = groups_to_output_d(&groups, input);
     interactor.output_d(&d, false);
