@@ -30,6 +30,7 @@ fn select_g_idx_pair(input: &Input) -> (usize, usize) {
 }
 
 fn solve(input: &Input, interactor: &mut Interactor) {
+    const STAGE_PAR: f64 = TIME_LIMIT / 2.;
     let mut balancer = Balancer::new();
 
     // ランダムにグループに割り振る
@@ -46,22 +47,30 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     let mut move_adopted_count = 0;
     let mut swap_adopted_count = 0;
     let mut swap2_adopted_count = 0;
+    let mut swap3_adopted_count = 0;
 
-    let action_p = [[0.5, 0.9, 1.0], [0.1, 0.2, 1.0]];
+    let action_p = [[0.5, 0.9, 1.0, 1.0], [0.1, 0.2, 1.0, 1.0]];
 
     while interactor.query_count < input.q && time::elapsed_seconds() < TIME_LIMIT - 0.1 {
-        let (lighter_g_idx, heavier_g_idx) = select_g_idx_pair(input);
         trial_count += 1;
 
-        let stage = time::elapsed_seconds() as usize;
+        let stage = if time::elapsed_seconds() < STAGE_PAR {
+            0
+        } else {
+            1
+        };
+
+        let (lighter_g_idx, heavier_g_idx) = select_g_idx_pair(input);
 
         let p = rnd::nextf();
         let action = if p < action_p[stage][0] {
             action_move
         } else if p < action_p[stage][1] {
             action_swap
-        } else {
+        } else if p < action_p[stage][2] {
             action_swap2
+        } else {
+            action_swap3
         };
 
         trial_count += 1;
@@ -83,6 +92,9 @@ fn solve(input: &Input, interactor: &mut Interactor) {
             } else if action == action_swap2 {
                 swap2_adopted_count += 1;
                 eprintln!("[{} / {}] adopt swap2", interactor.query_count, input.q);
+            } else if action == action_swap3 {
+                swap3_adopted_count += 1;
+                eprintln!("[{} / {}] adopt swap3", interactor.query_count, input.q);
             }
         }
 
@@ -103,6 +115,7 @@ fn solve(input: &Input, interactor: &mut Interactor) {
     eprintln!("move_adopted_count:  {move_adopted_count}");
     eprintln!("swap_adopted_count:  {swap_adopted_count}");
     eprintln!("swap2_adopted_count: {swap2_adopted_count}");
+    eprintln!("swap3_adopted_count: {swap3_adopted_count}");
 
     let d = groups_to_output_d(&groups, input);
     interactor.output_d(&d, false);
