@@ -19,10 +19,9 @@ pub enum BalanceResult {
 }
 
 pub struct Balancer {
-    left_edges: FastHashMap<u128, Vec<u128>>,  // first <= second
-    right_edges: FastHashMap<u128, Vec<u128>>, // first > second
-    left_cached_search_results: FastHashMap<u128, FastHashSet<u128>>,
-    right_cached_search_results: FastHashMap<u128, FastHashSet<u128>>,
+    pub left_edges: FastHashMap<u128, Vec<u128>>, // first <= second
+    pub right_edges: FastHashMap<u128, Vec<u128>>, // first > second
+    pub cached_results: FastHashMap<(u128, u128), BalanceResult>,
 }
 
 impl Balancer {
@@ -30,8 +29,7 @@ impl Balancer {
         Balancer {
             left_edges: FastHashMap::default(),
             right_edges: FastHashMap::default(),
-            left_cached_search_results: FastHashMap::default(),
-            right_cached_search_results: FastHashMap::default(),
+            cached_results: FastHashMap::default(),
         }
     }
 
@@ -55,15 +53,8 @@ impl Balancer {
         let left_hash = self.to_hash(left_v);
         let right_hash = self.to_hash(right_v);
 
-        if let Some(cached_left_search_result) = self.left_cached_search_results.get(&left_hash) {
-            if cached_left_search_result.contains(&right_hash) {
-                return BalanceResult::Left;
-            }
-        }
-        if let Some(cached_right_search_result) = self.right_cached_search_results.get(&left_hash) {
-            if cached_right_search_result.contains(&right_hash) {
-                return BalanceResult::Right;
-            }
+        if let Some(cached_result) = self.cached_results.get(&(left_hash, right_hash)) {
+            return *cached_result;
         }
 
         self.add_additional_edges(left_hash);
@@ -73,9 +64,17 @@ impl Balancer {
         match search_result {
             BalanceResult::Unknown => {}
             BalanceResult::Left | BalanceResult::Equal => {
+                self.cached_results
+                    .insert((left_hash, right_hash), BalanceResult::Left);
+                self.cached_results
+                    .insert((right_hash, left_hash), BalanceResult::Right);
                 return search_result;
             }
             BalanceResult::Right => {
+                self.cached_results
+                    .insert((right_hash, left_hash), BalanceResult::Left);
+                self.cached_results
+                    .insert((left_hash, right_hash), BalanceResult::Right);
                 return search_result;
             }
         }
@@ -95,17 +94,17 @@ impl Balancer {
         query_result
     }
 
-    fn search_result(&mut self, left_hash: u128, right_hash: u128) -> BalanceResult {
+    fn search_result(&self, left_hash: u128, right_hash: u128) -> BalanceResult {
         // NOTE: left = rightの時は稀（だと思う）ので、ここでは無視している
         const MAX_DEPTH: u16 = 5;
 
         fn is_reachable(
             edges: &FastHashMap<u128, Vec<u128>>,
-            seen: &mut FastHashSet<u128>,
             from_hash: u128,
             to_hash: u128,
         ) -> bool {
             let mut q = Queue::default();
+            let mut seen = FastHashSet::default();
             q.push_back((from_hash, 0));
             seen.insert(from_hash);
             while let Some((v, depth)) = q.pop_front() {
@@ -127,27 +126,11 @@ impl Balancer {
             false
         }
 
-        let mut left_seen = FastHashSet::default();
-        if is_reachable(&self.left_edges, &mut left_seen, left_hash, right_hash) {
-            if let Some(a) = self.left_cached_search_results.get_mut(&left_hash) {
-                a.extend(left_seen);
-            } else {
-                self.left_cached_search_results.insert(left_hash, left_seen);
-            }
+        if is_reachable(&self.left_edges, left_hash, right_hash) {
             return BalanceResult::Left;
-        }
-
-        let mut right_seen = FastHashSet::default();
-        if is_reachable(&self.right_edges, &mut right_seen, left_hash, right_hash) {
-            if let Some(a) = self.right_cached_search_results.get_mut(&left_hash) {
-                a.extend(right_seen);
-            } else {
-                self.right_cached_search_results
-                    .insert(left_hash, right_seen);
-            }
+        } else if is_reachable(&self.right_edges, left_hash, right_hash) {
             return BalanceResult::Right;
         }
-
         BalanceResult::Unknown
     }
 
@@ -171,11 +154,10 @@ impl Balancer {
     ///
     fn add_additional_edges(&mut self, v_hash: u128) {
         let mut additional_edges = vec![]; // first < second
-        let mut test_later_edges: Vec<(u128, u128, u128, u128)> = vec![];
         let edge_data = [&self.left_edges, &self.right_edges];
         for edges in edge_data {
             if edges.contains_key(&v_hash) {
-                return;
+                continue;
             }
             for (u_hash, _) in edges.iter() {
                 // 部分集合のチェック
@@ -197,36 +179,29 @@ impl Balancer {
                 // v ^ a = 010000, u ^ a = 001000
                 if (v_hash ^ *u_hash).count_ones() == 2 {
                     let a = v_hash & *u_hash;
-                    if let Some(cached_left_search_result) =
-                        self.left_cached_search_results.get(&(v_hash ^ a))
+                    if let Some(cached_result) = self.cached_results.get(&(v_hash ^ a, *u_hash ^ a))
                     {
-                        if cached_left_search_result.contains(&(*u_hash ^ a)) {
-                            additional_edges.push((v_hash, *u_hash));
-                            continue;
+                        match cached_result {
+                            BalanceResult::Left | BalanceResult::Equal => {
+                                additional_edges.push((v_hash, *u_hash));
+                            }
+                            BalanceResult::Right => {
+                                additional_edges.push((*u_hash, v_hash));
+                            }
+                            _ => {}
+                        }
+                    } else {
+                        match self.search_result(v_hash ^ a, *u_hash ^ a) {
+                            BalanceResult::Left | BalanceResult::Equal => {
+                                additional_edges.push((v_hash, *u_hash));
+                            }
+                            BalanceResult::Right => {
+                                additional_edges.push((*u_hash, v_hash));
+                            }
+                            _ => {}
                         }
                     }
-                    if let Some(cached_right_search_result) =
-                        self.right_cached_search_results.get(&(v_hash ^ a))
-                    {
-                        if cached_right_search_result.contains(&(*u_hash ^ a)) {
-                            additional_edges.push((*u_hash, v_hash));
-                            continue;
-                        }
-                    }
-                    test_later_edges.push((v_hash ^ a, *u_hash ^ a, v_hash, *u_hash));
                 }
-            }
-        }
-
-        for (left_hash, right_hash, v_hash, u_hash) in test_later_edges {
-            match self.search_result(left_hash, right_hash) {
-                BalanceResult::Left | BalanceResult::Equal => {
-                    additional_edges.push((v_hash, u_hash));
-                }
-                BalanceResult::Right => {
-                    additional_edges.push((u_hash, v_hash));
-                }
-                _ => {}
             }
         }
 
@@ -268,10 +243,11 @@ impl Balancer {
         }
         edges_mean /= self.left_edges.len() as f64;
         eprintln!(
-            "left_edges_node: {}, right_edges_node: {}, edges_per_node: {}",
+            "left_edges_node: {}, right_edges_node: {}, edges_per_node: {}, cached_result_size: {}",
             self.left_edges.len(),
             self.right_edges.len(),
             edges_mean,
+            self.cached_results.len()
         );
     }
 }

@@ -520,5 +520,3 @@ group
 
 - lighter_in_groupをキャッシュしたい
 - search_resultもキャッシュしたい
-
-- TODO: add_additional_edgesはself.left_edgesだけで良いかも
